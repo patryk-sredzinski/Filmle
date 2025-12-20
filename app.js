@@ -20,6 +20,7 @@ const randomMovieBtn = document.getElementById('randomMovieBtn');
 const movieDateInput = document.getElementById('movieDate');
 const winMessage = document.getElementById('winMessage');
 const winAttempts = document.getElementById('winAttempts');
+const movieTitleHint = document.getElementById('movieTitleHint');
 
 const movieCalendar = {
     "2025-12-01": 14, // American Beauty
@@ -324,7 +325,34 @@ function startNewGame(mode = 'calendar', selectedDate = null) {
     movieSearch.disabled = false;
     movieSearch.focus();
     
+    // Update movie title hint with underscores
+    updateMovieTitleHint();
+    
     console.log('Tajemniczy film:', mysteryMovie.title, mysteryMovie.original_title);
+}
+
+// Generate underscores hint for movie title
+function updateMovieTitleHint() {
+    if (!mysteryMovie || !movieTitleHint) return;
+    
+    // Use Polish title if available, otherwise original title
+    const title = mysteryMovie.title || mysteryMovie.original_title || '';
+    
+    // Create underscores for each letter, preserving spaces
+    const hint = title
+        .split('')
+        .map(char => {
+            if (char === ' ') {
+                return '     '; // 5 spaces for word separation
+            } else if (/[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(char)) {
+                return '_'; // Underscore for letters
+            } else {
+                return char; // Keep punctuation and other characters as-is
+            }
+        })
+        .join(' ');
+    
+    movieTitleHint.textContent = hint;
 }
 
 // Get today's date as YYYY-MM-DD string

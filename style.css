@@ -38,6 +38,17 @@ h1 {
     font-size: 1.1em;
 }
 
+.movie-title-hint {
+    margin-top: 20px;
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #667eea;
+    letter-spacing: 0.2em;
+    font-family: 'Courier New', monospace;
+    min-height: 2em;
+    word-break: break-word;
+}
+
 .game-info {
     display: flex;
     justify-content: space-between;
