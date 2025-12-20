@@ -46,6 +46,8 @@ h1 {
     padding: 15px;
     background: #f8f9fa;
     border-radius: 10px;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .attempts-counter {
@@ -53,6 +55,40 @@ h1 {
     color: #333;
 }
 
+.game-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.calendar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.calendar-label {
+    font-size: 1em;
+    color: #333;
+    font-weight: 500;
+}
+
+.calendar-input {
+    padding: 8px 12px;
+    font-size: 1em;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.3s;
+    cursor: pointer;
+}
+
+.calendar-input:focus {
+    border-color: #667eea;
+}
+
+.random-movie-btn,
 .new-game-btn {
     background: #667eea;
     color: white;
@@ -65,8 +101,17 @@ h1 {
     transition: background 0.3s;
 }
 
+.random-movie-btn:hover,
 .new-game-btn:hover {
     background: #5568d3;
+}
+
+.random-movie-btn {
+    background: #48bb78;
+}
+
+.random-movie-btn:hover {
+    background: #38a169;
 }
 
 .search-container {

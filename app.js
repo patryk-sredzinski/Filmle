@@ -1,5 +1,6 @@
 // Game state
 let moviesList = [];
+let top300Movies = []; // Cache for top 300 movies by popularity
 let mysteryMovie = null;
 let attempts = 0;
 let gameWon = false;
@@ -15,7 +16,8 @@ const movieSearch = document.getElementById('movieSearch');
 const autocomplete = document.getElementById('autocomplete');
 const guessesContainer = document.getElementById('guesses');
 const attemptsCounter = document.getElementById('attempts');
-const newGameBtn = document.getElementById('newGameBtn');
+const randomMovieBtn = document.getElementById('randomMovieBtn');
+const movieDateInput = document.getElementById('movieDate');
 const winMessage = document.getElementById('winMessage');
 const winAttempts = document.getElementById('winAttempts');
 
@@ -39,7 +41,7 @@ const movieCalendar = {
     "2025-12-17": 496243, // Parasite
     "2025-12-18": 1091, // The Thing
     "2025-12-19": 1366, // Rocky
-    "2025-12-20": 289, // Casablanca
+    "2025-12-20": 95, // Armageddon
     "2025-12-21": 11324, // Wyspa tajemnic
     "2025-12-22": 857, // Szeregowiec Ryan
     "2025-12-23": 281957, // The Revenant
@@ -172,9 +174,7 @@ const movieCalendar = {
     "2026-04-29": 458723, // Us
     "2026-04-30": 100, // Lock, Stock and Two Smoking Barrels
     "2026-05-01": 120, // Władca Pierścieni: Drużyna Pierścienia
-    "2026-05-02": 95, // Armageddon
   };
-  
 
 // Initialize game
 function init() {
@@ -182,11 +182,17 @@ function init() {
     if (typeof window.MOVIES_DATA !== 'undefined') {
         moviesList = window.MOVIES_DATA;
         console.log(`Załadowano ${moviesList.length} filmów`);
+        
+        // Prepare top 300 movies by popularity for random selection
+        top300Movies = [...moviesList]
+            .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+            .slice(0, 300);
+        console.log(`Przygotowano top 300 filmów według popularity`);
     } else {
         console.error('Brak danych filmów! Upewnij się, że uruchomiłeś: node build-html.js');
         alert('Błąd: Brak danych filmów. Uruchom: node build-html.js');
         if (movieSearch) movieSearch.disabled = true;
-        if (newGameBtn) newGameBtn.disabled = true;
+        if (randomMovieBtn) randomMovieBtn.disabled = true;
         return;
     }
     
@@ -230,12 +236,33 @@ function init() {
     });
     
     setupEventListeners();
-    startNewGame();
+    // Start game with today's date from calendar
+    startNewGame('calendar', getTodayDateString());
 }
 
 // Setup event listeners
 function setupEventListeners() {
-    newGameBtn.addEventListener('click', startNewGame);
+    randomMovieBtn.addEventListener('click', () => {
+        startNewGame('random');
+    });
+    
+    movieDateInput.addEventListener('change', (e) => {
+        const selectedDate = e.target.value;
+        if (selectedDate) {
+            if (movieCalendar[selectedDate]) {
+                startNewGame('calendar', selectedDate);
+            } else {
+                // Date selected but no movie for that date - show message and use random
+                alert(`Brak filmu w kalendarzu dla wybranej daty. Wybieram losowy film.`);
+                startNewGame('random');
+            }
+        }
+    });
+    
+    // Set today's date as default and max date
+    const todayDate = getTodayDateString();
+    movieDateInput.value = todayDate;
+    movieDateInput.max = todayDate; // Prevent selecting future dates
     
     movieSearch.addEventListener('input', handleSearchInput);
     movieSearch.addEventListener('keydown', handleSearchKeydown);
@@ -249,15 +276,44 @@ function setupEventListeners() {
 }
 
 // Start a new game
-function startNewGame() {
+function startNewGame(mode = 'calendar', selectedDate = null) {
     if (moviesList.length === 0) {
         alert('Brak filmów do załadowania');
         return;
     }
 
-    // Pick random movie
-    const randomIndex = Math.floor(Math.random() * moviesList.length);
-    mysteryMovie = moviesList[randomIndex];
+    let movieId = null;
+    
+    if (mode === 'calendar') {
+        // Use calendar - default to today's date
+        const dateStr = selectedDate || getTodayDateString();
+        movieId = movieCalendar[dateStr];
+        
+        if (!movieId) {
+            // If no movie for today, fall back to random
+            console.warn(`Brak filmu w kalendarzu dla daty ${dateStr}, wybieram losowy film`);
+            const randomIndex = Math.floor(Math.random() * moviesList.length);
+            mysteryMovie = moviesList[randomIndex];
+        } else {
+            // Find movie by ID
+            mysteryMovie = moviesList.find(m => m.id === movieId);
+            if (!mysteryMovie) {
+                console.warn(`Nie znaleziono filmu o ID ${movieId}, wybieram losowy film`);
+                const randomIndex = Math.floor(Math.random() * moviesList.length);
+                mysteryMovie = moviesList[randomIndex];
+            }
+        }
+    } else if (mode === 'random') {
+        // Pick random movie from top 300 by popularity
+        if (top300Movies.length === 0) {
+            // Fallback: if top300Movies wasn't prepared, prepare it now
+            top300Movies = [...moviesList]
+                .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+                .slice(0, 300);
+        }
+        const randomIndex = Math.floor(Math.random() * top300Movies.length);
+        mysteryMovie = top300Movies[randomIndex];
+    }
     
     attempts = 0;
     gameWon = false;
@@ -269,6 +325,15 @@ function startNewGame() {
     movieSearch.focus();
     
     console.log('Tajemniczy film:', mysteryMovie.title, mysteryMovie.original_title);
+}
+
+// Get today's date as YYYY-MM-DD string
+function getTodayDateString() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 // Handle search input
