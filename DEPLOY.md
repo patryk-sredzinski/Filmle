@@ -67,3 +67,7 @@ Jeśli chcesz, aby GitHub automatycznie budował aplikację przy każdym pushu, 
 
 
 
+
+
+
+

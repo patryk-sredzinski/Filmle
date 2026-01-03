@@ -47,6 +47,7 @@ h1 {
     font-family: 'Courier New', monospace;
     min-height: 2em;
     word-break: break-word;
+    white-space: pre-wrap;
 }
 
 .game-info {

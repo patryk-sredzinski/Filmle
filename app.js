@@ -86,6 +86,7 @@ async function startNewGame() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         mysteryMovie = await response.json();
+        mysteryMovie = mysteryMovie.movie;
     } catch (error) {
         console.error('Error fetching mystery movie:', error);
         alert('Błąd: Nie udało się załadować tajemniczego filmu. Sprawdź konfigurację CORS na serwerze API lub odśwież stronę.');
@@ -115,11 +116,9 @@ function updateMovieTitleHint() {
         .split('')
         .map(char => {
             if (char === ' ') {
-                return '     ';
-            } else if (/[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(char)) {
-                return '_';
+                return ' ';
             } else {
-                return char;
+                return '_';
             }
         })
         .join(' ');
@@ -148,7 +147,7 @@ async function handleSearchInput(e) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const matches = await response.json();
-        displayAutocomplete(matches);
+        displayAutocomplete(matches.results);
     } catch (error) {
         console.error('Error searching movies:', error);
         autocomplete.classList.remove('show');
@@ -157,18 +156,21 @@ async function handleSearchInput(e) {
 
 // Display autocomplete suggestions
 function displayAutocomplete(matches) {
-    if (!matches || matches.length === 0) {
+    // 1. Filter out movies without posters first
+    const matchesWithPosters = matches.filter(movie => movie.poster_path);
+
+    if (!matchesWithPosters || matchesWithPosters.length === 0) {
         autocomplete.classList.remove('show');
         return;
     }
     
-    autocomplete.innerHTML = matches.slice(0, 10).map(movie => {
-        const posterUrl = movie.poster_path 
-            ? `https://image.tmdb.org/t/p/w92${movie.poster_path}`
-            : '';
+    // 2. Use the filtered list for the rest of the function
+    autocomplete.innerHTML = matchesWithPosters.slice(0, 10).map(movie => {
+        const posterUrl = `https://image.tmdb.org/t/p/w92${movie.poster_path}`;
+        
         return `
         <div class="autocomplete-item" data-id="${movie.id}">
-            ${posterUrl ? `<img src="${posterUrl}" alt="${movie.title}" class="autocomplete-poster" onerror="this.style.display='none'">` : ''}
+            <img src="${posterUrl}" alt="${movie.title}" class="autocomplete-poster" onerror="this.style.display='none'">
             <div class="autocomplete-text">
                 <strong>${movie.title}</strong>
                 ${movie.original_title !== movie.title ? `<br><small>${movie.original_title}</small>` : ''}
@@ -219,6 +221,7 @@ async function selectMovie(movieId) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         guessedMovieDetails = await response.json();
+        guessedMovieDetails = guessedMovieDetails.movie;
     } catch (error) {
         console.error('Error fetching movie details:', error);
         alert('Błąd: Nie udało się załadować szczegółów filmu.');
