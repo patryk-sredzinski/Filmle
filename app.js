@@ -258,8 +258,9 @@ function compareMovies(guessed, mystery) {
                 (guessedYear === mysteryYear ? 'match' : (guessedYear > mysteryYear ? 'higher' : 'lower'))
     };
     
-    const guessedGenres = guessed.genres || [];
-    const mysteryGenres = mystery.genres || [];
+    const guessedGenres = guessed.genres.map(genre => genre.name) || [];
+    const mysteryGenres = mystery.genres.map(genre => genre.name) || [];
+    
     const commonGenres = guessedGenres.filter(g => mysteryGenres.includes(g));
     comparison.genres = {
         guessed: guessedGenres,
