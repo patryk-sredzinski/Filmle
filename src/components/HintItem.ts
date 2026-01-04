@@ -1,0 +1,143 @@
+export type HintColor = 'green' | 'yellow' | 'red' | 'neutral';
+export type HintItemType = 'text' | 'emoji' | 'flag' | 'photo' | 'logo' | 'genre' | 'inner';
+
+export interface HintItemConfig {
+    color: HintColor;
+    type: HintItemType;
+    content?: string; // Optional for 'inner' type
+    tooltip?: string;
+    imageUrl?: string;
+    // For inner type (year, budget, revenue)
+    icon?: string;
+    value?: string;
+    arrow?: string;
+}
+
+export class HintItem {
+    private config: HintItemConfig;
+    private element: HTMLElement | null = null;
+
+    constructor(config: HintItemConfig) {
+        this.config = config;
+    }
+
+    render(): HTMLElement {
+        let item: HTMLElement;
+
+        if (this.config.type === 'inner') {
+            // Special type for year, budget, revenue with icon, value, arrow
+            const block = document.createElement('div');
+            block.className = 'hint-block';
+            
+            const inner = document.createElement('div');
+            inner.className = `hint-inner hint-${this.config.color}`;
+            
+            if (this.config.tooltip) {
+                inner.setAttribute('data-tooltip', this.config.tooltip);
+            }
+            
+            if (this.config.icon) {
+                const iconEl = document.createElement('div');
+                iconEl.className = 'hint-icon';
+                iconEl.textContent = this.config.icon;
+                inner.appendChild(iconEl);
+            }
+            
+            if (this.config.value !== undefined) {
+                const valueEl = document.createElement('div');
+                valueEl.className = this.config.icon ? 'hint-amount' : 'hint-value';
+                valueEl.innerHTML = this.config.value;
+                inner.appendChild(valueEl);
+            }
+            
+            if (this.config.arrow) {
+                const arrowEl = document.createElement('div');
+                arrowEl.className = 'hint-arrow';
+                arrowEl.textContent = this.config.arrow;
+                inner.appendChild(arrowEl);
+            }
+            
+            block.appendChild(inner);
+            item = block;
+        } else {
+            // Other types
+            item = document.createElement('span');
+            
+            switch (this.config.type) {
+                case 'genre':
+                    item.className = `genre-icon hint-${this.config.color}`;
+                    break;
+                case 'logo':
+                    item.className = `company-logo hint-${this.config.color}`;
+                    break;
+                case 'flag':
+                    item.className = `country-flag hint-${this.config.color}`;
+                    break;
+                case 'photo':
+                    item.className = `actor-photo hint-${this.config.color}`;
+                    if (this.config.imageUrl) {
+                        item.classList.add('has-image');
+                        item.style.backgroundImage = `url('${this.config.imageUrl}')`;
+                    }
+                    break;
+                default:
+                    item.className = `hint-item hint-${this.config.color}`;
+            }
+            
+            if (this.config.tooltip) {
+                item.setAttribute('data-tooltip', this.config.tooltip);
+            }
+            
+            if (this.config.imageUrl && this.config.type !== 'photo') {
+                item.setAttribute('data-image', this.config.imageUrl);
+            }
+            
+            // Set content based on type
+            if (this.config.type === 'flag') {
+                const img = document.createElement('img');
+                img.src = this.config.content || '';
+                img.alt = this.config.tooltip || '';
+                img.onerror = () => {
+                    item.innerHTML = '<span style="font-size: 0.7em;">?</span>';
+                };
+                item.appendChild(img);
+            } else if (this.config.type === 'logo') {
+                if (this.config.imageUrl) {
+                    const img = document.createElement('img');
+                    img.src = this.config.imageUrl;
+                    img.alt = this.config.tooltip || '';
+                    img.onerror = () => {
+                        item.innerHTML = `<span class="company-initials-fallback">${this.config.content || ''}</span>`;
+                    };
+                    item.appendChild(img);
+                } else {
+                    item.innerHTML = `<span class="company-initials-fallback">${this.config.content || ''}</span>`;
+                }
+            } else if (this.config.type === 'photo') {
+                item.innerHTML = `<span class="actor-initials-fallback">${this.config.content || ''}</span>`;
+            } else if (this.config.content) {
+                item.innerHTML = this.config.content;
+            }
+        }
+
+        this.element = item;
+        return item;
+    }
+
+    getElement(): HTMLElement | null {
+        return this.element;
+    }
+
+    update(config: Partial<HintItemConfig>): void {
+        this.config = { ...this.config, ...config };
+        if (this.element) {
+            // Re-render if type changed, otherwise update in place
+            const newElement = this.render();
+            if (this.element.parentNode) {
+                this.element.parentNode.replaceChild(newElement, this.element);
+            }
+            this.element = newElement;
+        }
+    }
+}
+
