@@ -22,7 +22,7 @@ export class BudgetHint {
                 color = 'green';
                 tooltip = `Budżet: ${budgetValue} =\ntajemniczy film ma ten sam budżet`;
             } else if (arrow === '↑' || arrow === '↓') {
-                color = 'yellow';
+                color = 'red';
                 tooltip = `Budżet: ${budgetValue} ${arrow}\ntajemniczy film ma ${arrow === '↑' ? 'większy' : 'mniejszy'} budżet`;
             } else {
                 color = 'neutral';
@@ -54,18 +54,18 @@ export class BudgetHint {
                 } else {
                     value = `${formatCurrencyShort(min)}<br>-<br>${formatCurrencyShort(max)}`;
                     arrow = '';
-                    color = 'yellow';
+                    color = 'red';
                     tooltip = `Budżet: ${formatCurrencyShort(min)} - ${formatCurrencyShort(max)}\ntajemniczy film ma budżet między ${formatCurrencyShort(min)} a ${formatCurrencyShort(max)}`;
                 }
             } else if (min !== null && min !== undefined) {
                 value = formatCurrencyShort(min);
                 arrow = '↑';
-                color = 'yellow';
+                color = 'red';
                 tooltip = `Budżet: >${formatCurrencyShort(min)}\ntajemniczy film ma większy budżet niż ${formatCurrencyShort(min)}`;
             } else if (max !== null && max !== undefined) {
                 value = formatCurrencyShort(max);
                 arrow = '↓';
-                color = 'yellow';
+                color = 'red';
                 tooltip = `Budżet: <${formatCurrencyShort(max)}\ntajemniczy film ma mniejszy budżet niż ${formatCurrencyShort(max)}`;
             }
 

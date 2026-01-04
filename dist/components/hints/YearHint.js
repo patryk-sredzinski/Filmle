@@ -44,7 +44,7 @@ export class YearHint {
                 else {
                     value = `${min}<br>-<br>${max}`;
                     arrow = '';
-                    color = 'yellow';
+                    color = 'red';
                     tooltip = `Rok wydania: ${min}-${max}\ntajemniczy film jest między ${min} a ${max}`;
                 }
             }
