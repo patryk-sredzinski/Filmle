@@ -223,9 +223,29 @@ function isHintAvailable(hintType) {
             const title = mysteryMovie.title || mysteryMovie.original_title || '';
             return title.split('').some((char, index) => char !== ' ' && !hintsState.revealedLetters.has(index));
         case 'reveal_genre':
-            return mysteryMovie.genres.some((_, index) => !hintsState.revealedGenres.has(index));
+            // Get matched genres from guesses
+            const matchedGenreNames = new Set();
+            allGuesses.forEach(guess => {
+                guess.comparison.genres.items.forEach(item => {
+                    if (item.isMatch) {
+                        matchedGenreNames.add(item.name);
+                    }
+                });
+            });
+            // Check if there's any genre that hasn't been revealed and hasn't been matched
+            return mysteryMovie.genres.some((genre, index) => !hintsState.revealedGenres.has(index) && !matchedGenreNames.has(genre.name));
         case 'reveal_actor':
-            return mysteryMovie.top_cast.some((_, index) => !hintsState.revealedActors.has(index));
+            // Get matched actors from guesses
+            const matchedActorNames = new Set();
+            allGuesses.forEach(guess => {
+                guess.comparison.cast.items.forEach(item => {
+                    if (item.isMatch) {
+                        matchedActorNames.add(item.name);
+                    }
+                });
+            });
+            // Check if there's any actor that hasn't been revealed and hasn't been matched
+            return mysteryMovie.top_cast.some((actor, index) => !hintsState.revealedActors.has(index) && !matchedActorNames.has(actor.name));
         default:
             return false;
     }
@@ -286,9 +306,19 @@ function handleHintClick(hintType) {
             }
             break;
         case 'reveal_genre':
-            // Reveal first unrevealed genre
+            // Get matched genres from guesses
+            const matchedGenreNames = new Set();
+            allGuesses.forEach(guess => {
+                guess.comparison.genres.items.forEach(item => {
+                    if (item.isMatch) {
+                        matchedGenreNames.add(item.name);
+                    }
+                });
+            });
+            // Reveal first unrevealed genre that hasn't been matched yet
             for (let index = 0; index < mysteryMovie.genres.length; index++) {
-                if (!hintsState.revealedGenres.has(index)) {
+                const genre = mysteryMovie.genres[index];
+                if (!hintsState.revealedGenres.has(index) && !matchedGenreNames.has(genre.name)) {
                     hintsState.revealedGenres.add(index);
                     updateMysteryInfo();
                     break;
@@ -296,9 +326,19 @@ function handleHintClick(hintType) {
             }
             break;
         case 'reveal_actor':
-            // Reveal first unrevealed actor
+            // Get matched actors from guesses
+            const matchedActorNames = new Set();
+            allGuesses.forEach(guess => {
+                guess.comparison.cast.items.forEach(item => {
+                    if (item.isMatch) {
+                        matchedActorNames.add(item.name);
+                    }
+                });
+            });
+            // Reveal first unrevealed actor that hasn't been matched yet
             for (let index = 0; index < mysteryMovie.top_cast.length; index++) {
-                if (!hintsState.revealedActors.has(index)) {
+                const actor = mysteryMovie.top_cast[index];
+                if (!hintsState.revealedActors.has(index) && !matchedActorNames.has(actor.name)) {
                     hintsState.revealedActors.add(index);
                     updateMysteryInfo();
                     break;
