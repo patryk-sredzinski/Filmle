@@ -35,7 +35,8 @@ export interface Movie {
     revenue: number;
     production_companies: ProductionCompany[];
     production_countries: ProductionCountry[];
-    top_cast: CastMember[];
+    top_cast?: CastMember[];
+    cast?: CastMember[];
     director: Director | null;
     description?: string | null;
     quote_pl?: string | null;
@@ -53,43 +54,13 @@ export interface MovieSearchResponse {
     results: MovieSearchResult[];
 }
 
-// Raw API response types
-export interface RawCastMember {
-    name: string;
-    profile_path: string | null;
-    order: number;
-    character?: string;
-}
-
-export interface RawCrewMember {
-    name: string;
-    profile_path: string | null;
-    job: string;
-    department: string;
-}
-
-export interface RawMovieResponse {
-    id: number;
-    title: string;
-    original_title?: string;
-    release_date: string | null;
-    poster_path: string | null;
-    genres: Genre[];
-    budget: number;
-    revenue: number;
-    production_companies: ProductionCompany[];
-    production_countries: ProductionCountry[];
-    cast: RawCastMember[];
-    crew: RawCrewMember[];
-    description?: string | null;
+// API response wrapper (with optional date field)
+export interface MovieResponseWrapper {
+    date?: string;
+    movie: Movie;
     quote_pl?: string | null;
     quote_en?: string | null;
-}
-
-// Raw API response wrapper (with optional date field)
-export interface RawMovieResponseWrapper {
-    date?: string;
-    movie: RawMovieResponse;
+    description?: string | null;
 }
 
 // Simplified comparison models - only data needed for rendering

@@ -93,7 +93,8 @@ export class MysteryInfo {
             }
             const revealedActors = [];
             if (this.config.mysteryMovie) {
-                this.config.mysteryMovie.top_cast.forEach((actor, index) => {
+                const cast = this.config.mysteryMovie.top_cast || this.config.mysteryMovie.cast || [];
+                cast.forEach((actor, index) => {
                     if (this.config.hintState.revealedActors.has(index)) {
                         revealedActors.push(actor);
                     }
@@ -245,7 +246,8 @@ export class MysteryInfo {
         }
         // Add revealed actors from hints
         if (this.config.mysteryMovie) {
-            this.config.mysteryMovie.top_cast.forEach((actor, index) => {
+            const cast = this.config.mysteryMovie.top_cast || this.config.mysteryMovie.cast || [];
+            cast.forEach((actor, index) => {
                 if (this.config.hintState.revealedActors.has(index)) {
                     matchedCastMap.set(actor.name, actor);
                 }

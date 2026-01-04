@@ -25,39 +25,6 @@ let tooltipState = {
     sourceElement: null,
     hideTimeout: null
 };
-// Transform raw API response to Movie format
-function transformMovieResponse(rawMovie) {
-    // Sort cast by order and convert to CastMember
-    const sortedCast = [...rawMovie.cast]
-        .sort((a, b) => a.order - b.order)
-        .map(member => ({
-        name: member.name,
-        profile_path: member.profile_path
-    }));
-    // Extract director from crew
-    const directorMember = rawMovie.crew.find(member => member.job === 'Director' && member.department === 'Directing');
-    const director = directorMember ? {
-        name: directorMember.name,
-        profile_path: directorMember.profile_path
-    } : null;
-    return {
-        id: rawMovie.id,
-        title: rawMovie.title,
-        original_title: rawMovie.original_title,
-        release_date: rawMovie.release_date,
-        poster_path: rawMovie.poster_path,
-        genres: rawMovie.genres || [],
-        budget: rawMovie.budget || 0,
-        revenue: rawMovie.revenue || 0,
-        production_companies: rawMovie.production_companies || [],
-        production_countries: rawMovie.production_countries || [],
-        top_cast: sortedCast,
-        director: director,
-        description: rawMovie.description || null,
-        quote_pl: rawMovie.quote_pl || null,
-        quote_en: rawMovie.quote_en || null
-    };
-}
 // DOM elements
 const movieSearch = document.getElementById('movieSearch');
 const autocomplete = document.getElementById('autocomplete');
@@ -132,11 +99,16 @@ async function startNewGame() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const rawData = await response.json();
+        const data = await response.json();
         // Handle format with or without date wrapper
-        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
-        mysteryMovie = transformMovieResponse(rawMovie);
-        console.log(mysteryMovie);
+        const movie = 'date' in data ? data.movie : data.movie;
+        // Add quote and description from response (they might be at the top level)
+        mysteryMovie = {
+            ...movie,
+            quote_pl: data.quote_pl ?? movie.quote_pl ?? null,
+            quote_en: data.quote_en ?? movie.quote_en ?? null,
+            description: data.description ?? movie.description ?? null
+        };
     }
     catch (error) {
         console.error('Error fetching mystery movie:', error);
@@ -252,7 +224,8 @@ function isHintAvailable(hintType) {
                 });
             });
             // Check if there's any actor that hasn't been revealed and hasn't been matched
-            return mysteryMovie.top_cast.some((actor, index) => !hintsState.revealedActors.has(index) && !matchedActorNames.has(actor.name));
+            const cast = mysteryMovie.top_cast || mysteryMovie.cast || [];
+            return cast.some((actor, index) => !hintsState.revealedActors.has(index) && !matchedActorNames.has(actor.name));
         case 'reveal_quote':
             return !hintsState.showQuote && !!(mysteryMovie.quote_pl || mysteryMovie.quote_en);
         case 'reveal_description':
@@ -355,8 +328,9 @@ function handleHintClick(hintType) {
                 });
             });
             // Reveal first unrevealed actor that hasn't been matched yet
-            for (let index = 0; index < mysteryMovie.top_cast.length; index++) {
-                const actor = mysteryMovie.top_cast[index];
+            const cast = mysteryMovie.top_cast || mysteryMovie.cast || [];
+            for (let index = 0; index < cast.length; index++) {
+                const actor = cast[index];
                 if (!hintsState.revealedActors.has(index) && !matchedActorNames.has(actor.name)) {
                     hintsState.revealedActors.add(index);
                     updateMysteryInfo();
@@ -479,10 +453,16 @@ async function selectMovie(movieId) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const rawData = await response.json();
+        const data = await response.json();
         // Handle format with or without date wrapper
-        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
-        guessedMovieDetails = transformMovieResponse(rawMovie);
+        const movie = 'date' in data ? data.movie : data.movie;
+        // Add quote and description from response (they might be at the top level)
+        guessedMovieDetails = {
+            ...movie,
+            quote_pl: data.quote_pl ?? movie.quote_pl ?? null,
+            quote_en: data.quote_en ?? movie.quote_en ?? null,
+            description: data.description ?? movie.description ?? null
+        };
     }
     catch (error) {
         console.error('Error fetching movie details:', error);
@@ -616,9 +596,11 @@ function compareMovies(guessed, mystery) {
             isMatch: mysteryCountryNames.has(country.name)
         }))
     };
-    // Cast comparison - items with isMatch, already sorted by matches first (from top_cast order)
-    const mysteryCastNames = new Set(mystery.top_cast.map(a => a.name));
-    const castItems = guessed.top_cast.map(actor => ({
+    // Cast comparison - items with isMatch, already sorted by matches first (from cast order)
+    const mysteryCast = mystery.top_cast || mystery.cast || [];
+    const guessedCast = guessed.top_cast || guessed.cast || [];
+    const mysteryCastNames = new Set(mysteryCast.map(a => a.name));
+    const castItems = guessedCast.map(actor => ({
         name: actor.name,
         profile_path: actor.profile_path,
         isMatch: mysteryCastNames.has(actor.name)
