@@ -62,13 +62,13 @@ export class MysteryInfo {
             // Empty state
             return [
                 { type: 'year', items: [YearHint.create({ comparison: { min: null, max: null } })] },
-                { type: 'genres', items: [] },
+                { type: 'genres', items: [], emptyContent: 'Gatunki: ?\nbrak danych' },
                 { type: 'budget', items: [BudgetHint.create({ comparison: { min: null, max: null } })] },
                 { type: 'revenue', items: [RevenueHint.create({ comparison: { min: null, max: null } })] },
-                { type: 'companies', items: [] },
-                { type: 'countries', items: [] },
-                { type: 'director', items: [] },
-                { type: 'cast', items: [] }
+                { type: 'companies', items: [], emptyContent: 'Studia: ?\nbrak danych' },
+                { type: 'countries', items: [], emptyContent: 'Kraje: ?\nbrak danych' },
+                { type: 'director', items: [], emptyContent: 'Reżyser: ?\nbrak danych' },
+                { type: 'cast', items: [], emptyContent: 'Aktorzy: ?\nbrak danych' }
             ];
         }
 
@@ -212,7 +212,8 @@ export class MysteryInfo {
         );
         groups.push({
             type: 'genres',
-            items: genreItems
+            items: genreItems,
+            emptyContent: matchedGenres.length === 0 ? 'Gatunki: ?\nbrak danych' : undefined
         });
 
         // Budget - single item
@@ -233,7 +234,8 @@ export class MysteryInfo {
         );
         groups.push({
             type: 'companies',
-            items: companyItems
+            items: companyItems,
+            emptyContent: matchedCompanies.length === 0 ? 'Studia: ?\nbrak danych' : undefined
         });
 
         // Countries - multiple items
@@ -242,7 +244,8 @@ export class MysteryInfo {
         );
         groups.push({
             type: 'countries',
-            items: countryItems
+            items: countryItems,
+            emptyContent: matchedCountries.length === 0 ? 'Kraje: ?\nbrak danych' : undefined
         });
 
         // Director - single item (if exists)
@@ -254,7 +257,8 @@ export class MysteryInfo {
         } else {
             groups.push({
                 type: 'director',
-                items: []
+                items: [],
+                emptyContent: 'Reżyser: ?\nbrak danych'
             });
         }
 
@@ -264,7 +268,8 @@ export class MysteryInfo {
         );
         groups.push({
             type: 'cast',
-            items: castItems
+            items: castItems,
+            emptyContent: matchedCast.length === 0 ? 'Aktorzy: ?\nbrak danych' : undefined
         });
 
         return groups;

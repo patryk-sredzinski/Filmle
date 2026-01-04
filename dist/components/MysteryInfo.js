@@ -46,13 +46,13 @@ export class MysteryInfo {
             // Empty state
             return [
                 { type: 'year', items: [YearHint.create({ comparison: { min: null, max: null } })] },
-                { type: 'genres', items: [] },
+                { type: 'genres', items: [], emptyContent: 'Gatunki: ?\nbrak danych' },
                 { type: 'budget', items: [BudgetHint.create({ comparison: { min: null, max: null } })] },
                 { type: 'revenue', items: [RevenueHint.create({ comparison: { min: null, max: null } })] },
-                { type: 'companies', items: [] },
-                { type: 'countries', items: [] },
-                { type: 'director', items: [] },
-                { type: 'cast', items: [] }
+                { type: 'companies', items: [], emptyContent: 'Studia: ?\nbrak danych' },
+                { type: 'countries', items: [], emptyContent: 'Kraje: ?\nbrak danych' },
+                { type: 'director', items: [], emptyContent: 'Reżyser: ?\nbrak danych' },
+                { type: 'cast', items: [], emptyContent: 'Aktorzy: ?\nbrak danych' }
             ];
         }
         // Calculate year range based on arrows
@@ -190,7 +190,8 @@ export class MysteryInfo {
         const genreItems = matchedGenres.map(genre => GenreHint.create({ genre, isMatch: true }));
         groups.push({
             type: 'genres',
-            items: genreItems
+            items: genreItems,
+            emptyContent: matchedGenres.length === 0 ? 'Gatunki: ?\nbrak danych' : undefined
         });
         // Budget - single item
         groups.push({
@@ -206,13 +207,15 @@ export class MysteryInfo {
         const companyItems = matchedCompanies.map(company => CompanyHint.create({ company, isMatch: true }));
         groups.push({
             type: 'companies',
-            items: companyItems
+            items: companyItems,
+            emptyContent: matchedCompanies.length === 0 ? 'Studia: ?\nbrak danych' : undefined
         });
         // Countries - multiple items
         const countryItems = matchedCountries.map(country => CountryHint.create({ country, isMatch: true }));
         groups.push({
             type: 'countries',
-            items: countryItems
+            items: countryItems,
+            emptyContent: matchedCountries.length === 0 ? 'Kraje: ?\nbrak danych' : undefined
         });
         // Director - single item (if exists)
         if (matchedDirector) {
@@ -224,14 +227,16 @@ export class MysteryInfo {
         else {
             groups.push({
                 type: 'director',
-                items: []
+                items: [],
+                emptyContent: 'Reżyser: ?\nbrak danych'
             });
         }
         // Cast - multiple items
         const castItems = matchedCast.map(actor => ActorHint.create({ actor, isMatch: true }));
         groups.push({
             type: 'cast',
-            items: castItems
+            items: castItems,
+            emptyContent: matchedCast.length === 0 ? 'Aktorzy: ?\nbrak danych' : undefined
         });
         return groups;
     }

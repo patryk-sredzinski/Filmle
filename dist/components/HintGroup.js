@@ -16,15 +16,20 @@ export class HintGroup {
             this.items = [item];
         }
         else {
-            group.className = `hint-block ${this.config.type}-block`;
             if (this.config.items.length === 0) {
-                const empty = document.createElement('span');
-                empty.className = 'hint-neutral';
-                empty.style.padding = '5px';
-                empty.textContent = this.config.emptyContent || '-';
-                group.appendChild(empty);
+                // Create empty state with "?" similar to year block
+                group.className = 'hint-block';
+                const emptyInner = document.createElement('div');
+                emptyInner.className = 'hint-inner hint-neutral';
+                emptyInner.setAttribute('data-tooltip', this.config.emptyContent || 'Brak danych');
+                const emptyValue = document.createElement('div');
+                emptyValue.className = 'hint-value';
+                emptyValue.textContent = '?';
+                emptyInner.appendChild(emptyValue);
+                group.appendChild(emptyInner);
             }
             else {
+                group.className = `hint-block ${this.config.type}-block`;
                 this.items = this.config.items.map(itemConfig => {
                     const item = new HintItem(itemConfig);
                     const itemElement = item.render();
@@ -52,13 +57,20 @@ export class HintGroup {
             }
             else {
                 if (this.config.items.length === 0) {
-                    const empty = document.createElement('span');
-                    empty.className = 'hint-neutral';
-                    empty.style.padding = '5px';
-                    empty.textContent = this.config.emptyContent || '-';
-                    this.element.appendChild(empty);
+                    // Create empty state with "?" similar to year block
+                    this.element.className = 'hint-block';
+                    this.element.innerHTML = '';
+                    const emptyInner = document.createElement('div');
+                    emptyInner.className = 'hint-inner hint-neutral';
+                    emptyInner.setAttribute('data-tooltip', this.config.emptyContent || 'Brak danych');
+                    const emptyValue = document.createElement('div');
+                    emptyValue.className = 'hint-value';
+                    emptyValue.textContent = '?';
+                    emptyInner.appendChild(emptyValue);
+                    this.element.appendChild(emptyInner);
                 }
                 else {
+                    this.element.className = `hint-block ${this.config.type}-block`;
                     this.items = this.config.items.map(itemConfig => {
                         const item = new HintItem(itemConfig);
                         const itemElement = item.render();
