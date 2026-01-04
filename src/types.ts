@@ -88,10 +88,29 @@ export interface RawMovieResponseWrapper {
 
 export type ComparisonResult = 'match' | 'close' | 'far' | 'unknown';
 
+export type YearDirection = 'much_newer' | 'newer' | 'match' | 'older' | 'much_older' | 'unknown';
+
 export interface YearComparison {
     guessed: number | string;
     mystery: number | string;
-    result: ComparisonResult;
+    result: YearDirection;
+    yearDiff: number;
+}
+
+export type BudgetDirection = 'much_higher' | 'higher' | 'match' | 'lower' | 'much_lower' | 'unknown';
+
+export interface BudgetComparison {
+    guessed: number;
+    mystery: number;
+    result: BudgetDirection;
+    ratio: number;
+}
+
+export interface RevenueComparison {
+    guessed: number;
+    mystery: number;
+    result: BudgetDirection;
+    ratio: number;
 }
 
 export interface GenresComparison {
@@ -99,27 +118,14 @@ export interface GenresComparison {
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
-    isClose: boolean;
 }
 
-export interface BudgetComparison {
-    guessed: number;
-    mystery: number;
-    result: ComparisonResult;
-}
-
-export interface RevenueComparison {
-    guessed: number;
-    mystery: number;
-    result: ComparisonResult;
-}
 
 export interface CompaniesComparison {
     guessed: string[];
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
-    isClose: boolean;
 }
 
 export interface CountriesComparison {
@@ -127,7 +133,6 @@ export interface CountriesComparison {
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
-    isClose: boolean;
 }
 
 export interface CastComparison {
@@ -135,7 +140,7 @@ export interface CastComparison {
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
-    isClose: boolean;
+    guessedWithOrder: Array<{ name: string; isMatch: boolean; originalOrder: number }>;
 }
 
 export interface DirectorComparison {

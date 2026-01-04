@@ -11,10 +11,9 @@ let tooltipState = {
 };
 // Transform raw API response to Movie format
 function transformMovieResponse(rawMovie) {
-    // Extract top 3 cast members (sorted by order)
+    // Extract all cast members (sorted by order)
     const sortedCast = [...rawMovie.cast]
-        .sort((a, b) => a.order - b.order)
-        .slice(0, 3);
+        .sort((a, b) => a.order - b.order);
     const topCast = sortedCast.map(member => ({
         name: member.name,
         profile_path: member.profile_path
@@ -273,16 +272,23 @@ function compareMovies(guessed, mystery) {
     const guessedYear = guessed.release_date ? new Date(guessed.release_date).getFullYear() : 0;
     const mysteryYear = mystery.release_date ? new Date(mystery.release_date).getFullYear() : 0;
     let yearResult = 'unknown';
+    let yearDiff = 0;
     if (guessedYear !== 0 && mysteryYear !== 0) {
-        const yearDiff = Math.abs(guessedYear - mysteryYear);
+        yearDiff = guessedYear - mysteryYear; // Positive if guessed is newer
         if (yearDiff === 0) {
             yearResult = 'match';
         }
-        else if (yearDiff <= 2) {
-            yearResult = 'close';
+        else if (yearDiff > 5) {
+            yearResult = 'much_newer';
+        }
+        else if (yearDiff > 0) {
+            yearResult = 'newer';
+        }
+        else if (yearDiff < -5) {
+            yearResult = 'much_older';
         }
         else {
-            yearResult = 'far';
+            yearResult = 'older';
         }
     }
     const guessedGenres = guessed.genres.map(genre => genre.name) || [];
@@ -291,103 +297,117 @@ function compareMovies(guessed, mystery) {
     const guessedBudget = guessed.budget || 0;
     const mysteryBudget = mystery.budget || 0;
     let budgetResult = 'unknown';
+    let budgetRatio = 0;
     if (guessedBudget > 0 && mysteryBudget > 0) {
-        const budgetDiff = Math.abs(guessedBudget - mysteryBudget);
-        const budgetRatio = budgetDiff / Math.max(guessedBudget, mysteryBudget);
+        const budgetDiff = guessedBudget - mysteryBudget; // Positive if guessed is higher
+        budgetRatio = Math.abs(budgetDiff) / Math.max(guessedBudget, mysteryBudget);
         if (budgetDiff === 0) {
             budgetResult = 'match';
         }
-        else if (budgetRatio <= 0.3) { // Within 30%
-            budgetResult = 'close';
+        else if (budgetRatio <= 0.3) { // Within 30% - close
+            budgetResult = budgetDiff > 0 ? 'higher' : 'lower';
         }
         else {
-            budgetResult = 'far';
+            budgetResult = budgetDiff > 0 ? 'much_higher' : 'much_lower';
         }
     }
     else if (guessedBudget === 0 && mysteryBudget === 0) {
         budgetResult = 'match';
+        budgetRatio = 0;
     }
     const guessedRevenue = guessed.revenue || 0;
     const mysteryRevenue = mystery.revenue || 0;
     let revenueResult = 'unknown';
+    let revenueRatio = 0;
     if (guessedRevenue > 0 && mysteryRevenue > 0) {
-        const revenueDiff = Math.abs(guessedRevenue - mysteryRevenue);
-        const revenueRatio = revenueDiff / Math.max(guessedRevenue, mysteryRevenue);
+        const revenueDiff = guessedRevenue - mysteryRevenue; // Positive if guessed is higher
+        revenueRatio = Math.abs(revenueDiff) / Math.max(guessedRevenue, mysteryRevenue);
         if (revenueDiff === 0) {
             revenueResult = 'match';
         }
-        else if (revenueRatio <= 0.3) { // Within 30%
-            revenueResult = 'close';
+        else if (revenueRatio <= 0.3) { // Within 30% - close
+            revenueResult = revenueDiff > 0 ? 'higher' : 'lower';
         }
         else {
-            revenueResult = 'far';
+            revenueResult = revenueDiff > 0 ? 'much_higher' : 'much_lower';
         }
     }
     else if (guessedRevenue === 0 && mysteryRevenue === 0) {
         revenueResult = 'match';
+        revenueRatio = 0;
     }
     const guessedCompanies = (guessed.production_companies || []).map(c => c.name);
     const mysteryCompanies = (mystery.production_companies || []).map(c => c.name);
     const commonCompanies = guessedCompanies.filter(c => mysteryCompanies.includes(c));
-    // Close if at least 1 match but not all (assuming we show top 3)
-    const companiesIsClose = commonCompanies.length > 0 && commonCompanies.length < Math.min(guessedCompanies.length, mysteryCompanies.length);
     const guessedCountries = (guessed.production_countries || []).map(c => c.name);
     const mysteryCountries = (mystery.production_countries || []).map(c => c.name);
     const commonCountries = guessedCountries.filter(c => mysteryCountries.includes(c));
-    // Close if at least 1 match but not all (assuming we show top 3)
-    const countriesIsClose = commonCountries.length > 0 && commonCountries.length < Math.min(guessedCountries.length, mysteryCountries.length);
-    const guessedCast = (guessed.top_cast || []).map(a => a.name);
-    const mysteryCast = (mystery.top_cast || []).map(a => a.name);
-    const commonCast = guessedCast.filter(a => mysteryCast.includes(a));
-    // Close if at least 1 match but not all (we show top 3)
-    const castIsClose = commonCast.length > 0 && commonCast.length < Math.min(guessedCast.length, mysteryCast.length);
+    // For cast, use all actors and preserve order
+    const guessedCastFull = (guessed.top_cast || []).map((a, index) => ({
+        name: a.name,
+        isMatch: false,
+        originalOrder: index
+    }));
+    const mysteryCastNames = (mystery.top_cast || []).map(a => a.name);
+    const guessedCastWithMatches = guessedCastFull.map(actor => ({
+        ...actor,
+        isMatch: mysteryCastNames.includes(actor.name)
+    }));
+    // Sort: matches first, then non-matches, preserving original order within each group
+    const sortedGuessedCast = [...guessedCastWithMatches].sort((a, b) => {
+        if (a.isMatch && !b.isMatch)
+            return -1;
+        if (!a.isMatch && b.isMatch)
+            return 1;
+        return a.originalOrder - b.originalOrder;
+    });
+    const guessedCast = sortedGuessedCast.map(a => a.name);
+    const commonCast = guessedCastWithMatches.filter(a => a.isMatch).map(a => a.name);
     const guessedDirector = guessed.director?.name || null;
     const mysteryDirector = mystery.director?.name || null;
-    // For genres, close if at least 1 match but not all
-    const genresIsClose = commonGenres.length > 0 && commonGenres.length < Math.min(guessedGenres.length, mysteryGenres.length);
     const comparison = {
         year: {
             guessed: guessedYear || 'Nieznany',
             mystery: mysteryYear || 'Nieznany',
-            result: yearResult
+            result: yearResult,
+            yearDiff: yearDiff
         },
         genres: {
             guessed: guessedGenres,
             mystery: mysteryGenres,
             matches: commonGenres,
-            hasMatch: commonGenres.length > 0,
-            isClose: genresIsClose
+            hasMatch: commonGenres.length > 0
         },
         budget: {
             guessed: guessedBudget,
             mystery: mysteryBudget,
-            result: budgetResult
+            result: budgetResult,
+            ratio: budgetRatio
         },
         revenue: {
             guessed: guessedRevenue,
             mystery: mysteryRevenue,
-            result: revenueResult
+            result: revenueResult,
+            ratio: revenueRatio
         },
         companies: {
             guessed: guessedCompanies,
             mystery: mysteryCompanies,
             matches: commonCompanies,
-            hasMatch: commonCompanies.length > 0,
-            isClose: companiesIsClose
+            hasMatch: commonCompanies.length > 0
         },
         countries: {
             guessed: guessedCountries,
             mystery: mysteryCountries,
             matches: commonCountries,
-            hasMatch: commonCountries.length > 0,
-            isClose: countriesIsClose
+            hasMatch: commonCountries.length > 0
         },
         cast: {
             guessed: guessedCast,
-            mystery: mysteryCast,
+            mystery: mysteryCastNames,
             matches: commonCast,
             hasMatch: commonCast.length > 0,
-            isClose: castIsClose
+            guessedWithOrder: sortedGuessedCast
         },
         director: {
             guessed: guessedDirector ? [guessedDirector] : [],
@@ -535,15 +555,25 @@ function displayGuess(movie, comparison) {
         yearArrow = '=';
         yearTooltip = `Rok wydania: ${year} =\ntajemniczy film ma ten sam rok`;
     }
-    else if (comparison.year.result === 'close') {
-        yearClass = 'hint-yellow';
-        yearArrow = '≈';
-        yearTooltip = `Rok wydania: ${year} ≈\ntajemniczy film jest blisko tego roku`;
-    }
-    else {
+    else if (comparison.year.result === 'much_newer') {
         yearClass = 'hint-red';
-        yearArrow = '✗';
-        yearTooltip = `Rok wydania: ${year} ✗\ntajemniczy film jest daleko od tego roku`;
+        yearArrow = '↓↓';
+        yearTooltip = `Rok wydania: ${year} ↓↓\ntajemniczy film jest dużo starszy`;
+    }
+    else if (comparison.year.result === 'newer') {
+        yearClass = 'hint-yellow';
+        yearArrow = '↓';
+        yearTooltip = `Rok wydania: ${year} ↓\ntajemniczy film jest starszy`;
+    }
+    else if (comparison.year.result === 'older') {
+        yearClass = 'hint-yellow';
+        yearArrow = '↑';
+        yearTooltip = `Rok wydania: ${year} ↑\ntajemniczy film jest nowszy`;
+    }
+    else if (comparison.year.result === 'much_older') {
+        yearClass = 'hint-red';
+        yearArrow = '↑↑';
+        yearTooltip = `Rok wydania: ${year} ↑↑\ntajemniczy film jest dużo nowszy`;
     }
     let budgetClass = 'hint-red';
     let budgetArrow = '';
@@ -559,15 +589,25 @@ function displayGuess(movie, comparison) {
         budgetArrow = '=';
         budgetTooltip = `Budżet: ${budgetValue} =\ntajemniczy film ma ten sam budżet`;
     }
-    else if (comparison.budget.result === 'close') {
-        budgetClass = 'hint-yellow';
-        budgetArrow = '≈';
-        budgetTooltip = `Budżet: ${budgetValue} ≈\ntajemniczy film ma podobny budżet`;
-    }
-    else {
+    else if (comparison.budget.result === 'much_higher') {
         budgetClass = 'hint-red';
-        budgetArrow = '✗';
-        budgetTooltip = `Budżet: ${budgetValue} ✗\ntajemniczy film ma bardzo różny budżet`;
+        budgetArrow = '↓↓';
+        budgetTooltip = `Budżet: ${budgetValue} ↓↓\ntajemniczy film ma dużo mniejszy budżet`;
+    }
+    else if (comparison.budget.result === 'higher') {
+        budgetClass = 'hint-yellow';
+        budgetArrow = '↓';
+        budgetTooltip = `Budżet: ${budgetValue} ↓\ntajemniczy film ma mniejszy budżet`;
+    }
+    else if (comparison.budget.result === 'lower') {
+        budgetClass = 'hint-yellow';
+        budgetArrow = '↑';
+        budgetTooltip = `Budżet: ${budgetValue} ↑\ntajemniczy film ma większy budżet`;
+    }
+    else if (comparison.budget.result === 'much_lower') {
+        budgetClass = 'hint-red';
+        budgetArrow = '↑↑';
+        budgetTooltip = `Budżet: ${budgetValue} ↑↑\ntajemniczy film ma dużo większy budżet`;
     }
     let revenueClass = 'hint-red';
     let revenueArrow = '';
@@ -583,47 +623,51 @@ function displayGuess(movie, comparison) {
         revenueArrow = '=';
         revenueTooltip = `Przychód: ${revenueValue} =\ntajemniczy film ma ten sam przychód`;
     }
-    else if (comparison.revenue.result === 'close') {
-        revenueClass = 'hint-yellow';
-        revenueArrow = '≈';
-        revenueTooltip = `Przychód: ${revenueValue} ≈\ntajemniczy film ma podobny przychód`;
-    }
-    else {
+    else if (comparison.revenue.result === 'much_higher') {
         revenueClass = 'hint-red';
-        revenueArrow = '✗';
-        revenueTooltip = `Przychód: ${revenueValue} ✗\ntajemniczy film ma bardzo różny przychód`;
+        revenueArrow = '↓↓';
+        revenueTooltip = `Przychód: ${revenueValue} ↓↓\ntajemniczy film ma dużo mniejszy przychód`;
+    }
+    else if (comparison.revenue.result === 'higher') {
+        revenueClass = 'hint-yellow';
+        revenueArrow = '↓';
+        revenueTooltip = `Przychód: ${revenueValue} ↓\ntajemniczy film ma mniejszy przychód`;
+    }
+    else if (comparison.revenue.result === 'lower') {
+        revenueClass = 'hint-yellow';
+        revenueArrow = '↑';
+        revenueTooltip = `Przychód: ${revenueValue} ↑\ntajemniczy film ma większy przychód`;
+    }
+    else if (comparison.revenue.result === 'much_lower') {
+        revenueClass = 'hint-red';
+        revenueArrow = '↑↑';
+        revenueTooltip = `Przychód: ${revenueValue} ↑↑\ntajemniczy film ma dużo większy przychód`;
     }
     const guessedGenres = (movie.genres || []).map(genre => {
         const isMatch = comparison.genres.matches.includes(genre.name);
-        const isClose = !isMatch && comparison.genres.isClose;
         return {
             name: genre.name,
             icon: getGenreIcon(genre.name),
-            isMatch: isMatch,
-            isClose: isClose
+            isMatch: isMatch
         };
     });
     const guessedCompanies = (movie.production_companies || []).slice(0, 3).map(c => {
         const isMatch = comparison.companies.matches.includes(c.name);
-        const isClose = !isMatch && comparison.companies.isClose;
         return {
             name: c.name,
             logo: c.logo_path ? `https://image.tmdb.org/t/p/w500${c.logo_path}` : null,
             logoLarge: c.logo_path ? `https://image.tmdb.org/t/p/w780${c.logo_path}` : null,
             initials: getCompanyInitials(c.name),
-            isMatch: isMatch,
-            isClose: isClose
+            isMatch: isMatch
         };
     });
     const guessedCountries = (movie.production_countries || []).slice(0, 3).map(c => {
         const isMatch = comparison.countries.matches.includes(c.name);
-        const isClose = !isMatch && comparison.countries.isClose;
         return {
             name: c.name,
             namePL: getCountryNamePL(c.iso_3166_1),
             code: c.iso_3166_1,
-            isMatch: isMatch,
-            isClose: isClose
+            isMatch: isMatch
         };
     });
     const guessedDirectors = movie.director ? [{
@@ -637,22 +681,23 @@ function displayGuess(movie, comparison) {
                 : null,
             isMatch: comparison.director.hasMatch
         }] : [];
-    const guessedCast = (movie.top_cast || []).slice(0, 3).map(a => {
-        const isMatch = comparison.cast.matches.includes(a.name);
-        const isClose = !isMatch && comparison.cast.isClose;
-        const profileUrl = a.profile_path
-            ? `https://image.tmdb.org/t/p/w185${a.profile_path}`
+    // Use actors from comparison (already sorted: matches first, then non-matches)
+    // Limit to max 3, prioritizing matches
+    const guessedCast = comparison.cast.guessedWithOrder.slice(0, 3).map(actorInfo => {
+        // Find the actor in movie.top_cast to get profile_path
+        const actor = movie.top_cast.find(a => a.name === actorInfo.name);
+        const profileUrl = actor?.profile_path
+            ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
             : null;
-        const profileUrlLarge = a.profile_path
-            ? `https://image.tmdb.org/t/p/w500${a.profile_path}`
+        const profileUrlLarge = actor?.profile_path
+            ? `https://image.tmdb.org/t/p/w500${actor.profile_path}`
             : null;
         return {
-            name: a.name,
-            initials: getActorInitials(a.name),
+            name: actorInfo.name,
+            initials: getActorInitials(actorInfo.name),
             profileUrl: profileUrl,
             profileUrlLarge: profileUrlLarge,
-            isMatch: isMatch,
-            isClose: isClose
+            isMatch: actorInfo.isMatch
         };
     });
     guessCard.innerHTML = `
@@ -669,11 +714,10 @@ function displayGuess(movie, comparison) {
             </div>
             
             <div class="hint-block genres-block">
-                ${guessedGenres.length > 0 ? guessedGenres.map(g => {
-        const colorClass = g.isMatch ? 'hint-green' : (g.isClose ? 'hint-yellow' : 'hint-red');
-        return `<span class="genre-icon ${colorClass}" 
-                          data-tooltip="${g.name}">${g.icon}</span>`;
-    }).join('') : '<span class="hint-neutral" style="padding: 5px;">-</span>'}
+                ${guessedGenres.length > 0 ? guessedGenres.map(g => `
+                    <span class="genre-icon ${g.isMatch ? 'hint-green' : 'hint-red'}" 
+                          data-tooltip="${g.name}">${g.icon}</span>
+                `).join('') : '<span class="hint-neutral" style="padding: 5px;">-</span>'}
             </div>
             
             <div class="hint-block budget-block">
@@ -693,24 +737,22 @@ function displayGuess(movie, comparison) {
             </div>
             
             <div class="hint-block companies-block">
-                ${guessedCompanies.length > 0 ? guessedCompanies.map(c => {
-        const colorClass = c.isMatch ? 'hint-green' : (c.isClose ? 'hint-yellow' : 'hint-red');
-        return `<span class="company-logo ${colorClass}" 
+                ${guessedCompanies.length > 0 ? guessedCompanies.map(c => `
+                    <span class="company-logo ${c.isMatch ? 'hint-green' : 'hint-red'}" 
                           data-tooltip="${c.name}"
                           data-image="${c.logoLarge || ''}">
                         ${c.logo ? `<img src="${c.logo}" alt="${c.name}" onerror="this.parentElement.innerHTML='<span class=\\'company-initials-fallback\\'>${c.initials}</span>'">` : `<span class="company-initials-fallback">${c.initials}</span>`}
-                    </span>`;
-    }).join('') : '<span class="hint-neutral" style="padding: 5px;">-</span>'}
+                    </span>
+                `).join('') : '<span class="hint-neutral" style="padding: 5px;">-</span>'}
             </div>
             
             <div class="hint-block countries-block">
-                ${guessedCountries.length > 0 ? guessedCountries.map(c => {
-        const colorClass = c.isMatch ? 'hint-green' : (c.isClose ? 'hint-yellow' : 'hint-red');
-        return `<span class="country-flag ${colorClass}" 
+                ${guessedCountries.length > 0 ? guessedCountries.map(c => `
+                    <span class="country-flag ${c.isMatch ? 'hint-green' : 'hint-red'}" 
                           data-tooltip="${c.namePL || c.name}">
                         <img src="${getCountryFlagUrl(c.code)}" alt="${c.namePL || c.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\\'font-size: 0.7em;\\'>?</span>'">
-                    </span>`;
-    }).join('') : '<span class="hint-neutral" style="padding: 5px;">-</span>'}
+                    </span>
+                `).join('') : '<span class="hint-neutral" style="padding: 5px;">-</span>'}
             </div>
             
             <div class="hint-block director-block">
@@ -731,9 +773,8 @@ function displayGuess(movie, comparison) {
             <div class="hint-block cast-block">
                 ${guessedCast.length > 0 ? guessedCast.map(a => {
         const hasImage = a.profileUrl ? 'has-image' : '';
-        const colorClass = a.isMatch ? 'hint-green' : (a.isClose ? 'hint-yellow' : 'hint-red');
         return `
-                    <span class="actor-photo ${colorClass} ${hasImage}" 
+                    <span class="actor-photo ${a.isMatch ? 'hint-green' : 'hint-red'} ${hasImage}" 
                           data-tooltip="Aktor: ${a.name}"
                           data-image="${a.profileUrlLarge || ''}"
                           data-initials="${a.initials}"
