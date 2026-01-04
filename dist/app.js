@@ -401,11 +401,13 @@ function displayAutocomplete(matches) {
     // 2. Use the filtered list for the rest of the function
     autocomplete.innerHTML = matchesWithPosters.slice(0, 10).map(movie => {
         const posterUrl = `https://image.tmdb.org/t/p/w92${movie.poster_path}`;
+        const year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+        const yearText = year ? ` (${year})` : '';
         return `
         <div class="autocomplete-item" data-id="${movie.id}">
             <img src="${posterUrl}" alt="${movie.title}" class="autocomplete-poster" onerror="this.style.display='none'">
             <div class="autocomplete-text">
-                <strong>${movie.title}</strong>
+                <strong>${movie.title}</strong>${year ? `<span class="autocomplete-year">${year}</span>` : ''}
                 ${movie.original_title !== movie.title ? `<br><small>${movie.original_title}</small>` : ''}
             </div>
         </div>
