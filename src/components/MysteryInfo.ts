@@ -108,7 +108,7 @@ export class MysteryInfo {
         return container;
     }
 
-    private createGroupsConfig(): HintGroupConfig[] {
+    private createGroupsConfig(): HintGroupConfig[] {        
         const groups: HintGroupConfig[] = [];
         const allGuesses = this.config.allGuesses;
 
@@ -133,6 +133,15 @@ export class MysteryInfo {
                 });
             }
             
+            let directorItems: HintItemConfig[] = [];
+            if (this.config.mysteryMovie && this.config.hintState.revealedDirector) {
+                const relvealedDirector = getDirector(this.config.mysteryMovie);
+                if (relvealedDirector) {
+                 const hintDirector = DirectorHint.create({ director: relvealedDirector, isMatch: true })
+                 directorItems.push(hintDirector);
+                }
+            }
+
             return [
                 { type: 'year', items: [YearHint.create({ comparison: { min: null, max: null } })] },
                 { 
@@ -144,7 +153,7 @@ export class MysteryInfo {
                 { type: 'revenue', items: [RevenueHint.create({ comparison: { min: null, max: null } })] },
                 { type: 'companies', items: [], emptyContent: 'Studia: ?\nbrak danych' },
                 { type: 'countries', items: [], emptyContent: 'Kraje: ?\nbrak danych' },
-                { type: 'director', items: [], emptyContent: 'Reżyser: ?\nbrak danych' },
+                { type: 'director', items: directorItems, emptyContent: 'Reżyser: ?\nbrak danych' },
                 { 
                     type: 'cast', 
                     items: revealedActors.map(actor => ActorHint.create({ actor, isMatch: true })),
