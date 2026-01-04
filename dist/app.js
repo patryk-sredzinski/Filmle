@@ -12,33 +12,19 @@ let tooltipState = {
     sourceElement: null,
     hideTimeout: null
 };
-// Transform raw API response to Movie format
-function transformMovieResponse(rawMovie) {
-    // Extract all cast members (sorted by order)
-    const sortedCast = [...rawMovie.cast]
-        .sort((a, b) => a.order - b.order);
-    const topCast = sortedCast.map(member => ({
-        name: member.name,
-        profile_path: member.profile_path
-    }));
+// Transform API response to Movie format with computed fields
+function transformMovieResponse(movie) {
+    // Sort cast by order
+    const sortedCast = [...movie.cast].sort((a, b) => a.order - b.order);
     // Extract director from crew
-    const directorMember = rawMovie.crew.find(member => member.job === 'Director' && member.department === 'Directing');
+    const directorMember = movie.crew.find(member => member.job === 'Director' && member.department === 'Directing');
     const director = directorMember ? {
         name: directorMember.name,
         profile_path: directorMember.profile_path
     } : null;
     return {
-        id: rawMovie.id,
-        title: rawMovie.title,
-        original_title: rawMovie.original_title,
-        release_date: rawMovie.release_date,
-        poster_path: rawMovie.poster_path,
-        genres: rawMovie.genres || [],
-        budget: rawMovie.budget || 0,
-        revenue: rawMovie.revenue || 0,
-        production_companies: rawMovie.production_companies || [],
-        production_countries: rawMovie.production_countries || [],
-        top_cast: topCast,
+        ...movie,
+        cast: sortedCast,
         director: director
     };
 }
@@ -117,8 +103,8 @@ async function startNewGame() {
         }
         const rawData = await response.json();
         // Handle format with or without date wrapper
-        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
-        mysteryMovie = transformMovieResponse(rawMovie);
+        const movie = 'date' in rawData ? rawData.movie : rawData.movie;
+        mysteryMovie = transformMovieResponse(movie);
         console.log(mysteryMovie);
     }
     catch (error) {
@@ -253,8 +239,8 @@ async function selectMovie(movieId) {
         }
         const rawData = await response.json();
         // Handle format with or without date wrapper
-        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
-        guessedMovieDetails = transformMovieResponse(rawMovie);
+        const movie = 'date' in rawData ? rawData.movie : rawData.movie;
+        guessedMovieDetails = transformMovieResponse(movie);
     }
     catch (error) {
         console.error('Error fetching movie details:', error);
@@ -362,12 +348,12 @@ function compareMovies(guessed, mystery) {
     const mysteryCountries = (mystery.production_countries || []).map(c => c.name);
     const commonCountries = guessedCountries.filter(c => mysteryCountries.includes(c));
     // For cast, use all actors and preserve order
-    const guessedCastFull = (guessed.top_cast || []).map((a, index) => ({
+    const guessedCastFull = (guessed.cast || []).map((a, index) => ({
         name: a.name,
         isMatch: false,
         originalOrder: index
     }));
-    const mysteryCastNames = (mystery.top_cast || []).map(a => a.name);
+    const mysteryCastNames = (mystery.cast || []).map(a => a.name);
     const guessedCastWithMatches = guessedCastFull.map(actor => ({
         ...actor,
         isMatch: mysteryCastNames.includes(actor.name)

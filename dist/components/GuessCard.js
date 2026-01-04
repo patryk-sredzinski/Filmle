@@ -94,7 +94,7 @@ export class GuessCard {
         }));
         // Cast
         groups.push(ActorHint.createForGuess({
-            cast: movie.top_cast,
+            cast: movie.cast,
             comparison: comparison.cast
         }));
         return groups;

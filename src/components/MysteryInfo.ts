@@ -255,7 +255,7 @@ export class MysteryInfo {
         groups.push(ActorHint.createForMystery({
             cast: [],
             matchedActorNames: Array.from(matchedCast),
-            allGuesses: allGuesses.map(guess => ({ movie: { top_cast: guess.movie.top_cast } }))
+            allGuesses: allGuesses.map(guess => ({ movie: { cast: guess.movie.cast } }))
         }));
 
         return groups;

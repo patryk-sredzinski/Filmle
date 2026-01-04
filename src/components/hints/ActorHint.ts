@@ -8,7 +8,7 @@ export interface ActorHintConfig {
     // For mystery info - only matched actor names
     matchedActorNames?: string[];
     // For mystery info - need to find profile paths from guesses
-    allGuesses?: Array<{ movie: { top_cast: CastMember[] } }>;
+    allGuesses?: Array<{ movie: { cast: CastMember[] } }>;
 }
 
 export class ActorHint {
@@ -60,7 +60,7 @@ export class ActorHint {
             let profileUrl: string | undefined = undefined;
             if (allGuesses) {
                 for (const guess of allGuesses) {
-                    const actor = guess.movie.top_cast.find(a => a.name === actorName);
+                    const actor = guess.movie.cast.find(a => a.name === actorName);
                     if (actor && actor.profile_path) {
                         profileUrl = `https://image.tmdb.org/t/p/w500${actor.profile_path}`;
                         break;

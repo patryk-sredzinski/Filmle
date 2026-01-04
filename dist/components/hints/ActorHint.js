@@ -42,7 +42,7 @@ export class ActorHint {
             let profileUrl = undefined;
             if (allGuesses) {
                 for (const guess of allGuesses) {
-                    const actor = guess.movie.top_cast.find(a => a.name === actorName);
+                    const actor = guess.movie.cast.find(a => a.name === actorName);
                     if (actor && actor.profile_path) {
                         profileUrl = `https://image.tmdb.org/t/p/w500${actor.profile_path}`;
                         break;

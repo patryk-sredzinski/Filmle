@@ -2,8 +2,7 @@ import {
     Movie,
     MovieSearchResult,
     MovieSearchResponse,
-    RawMovieResponse,
-    RawMovieResponseWrapper,
+    MovieResponseWrapper,
     MovieComparison,
     TooltipState,
     ComparisonResult,
@@ -28,37 +27,23 @@ let tooltipState: TooltipState = {
     hideTimeout: null
 };
 
-// Transform raw API response to Movie format
-function transformMovieResponse(rawMovie: RawMovieResponse): Movie {
-    // Extract all cast members (sorted by order)
-    const sortedCast = [...rawMovie.cast]
-        .sort((a, b) => a.order - b.order);
-    const topCast = sortedCast.map(member => ({
-        name: member.name,
-        profile_path: member.profile_path
-    }));
+// Transform API response to Movie format with computed fields
+function transformMovieResponse(movie: Movie): Movie {
+    // Sort cast by order
+    const sortedCast = [...movie.cast].sort((a, b) => a.order - b.order);
 
     // Extract director from crew
-    const directorMember = rawMovie.crew.find(
+    const directorMember = movie.crew.find(
         member => member.job === 'Director' && member.department === 'Directing'
     );
-    const director: { name: string; profile_path: string | null } | null = directorMember ? {
+    const director = directorMember ? {
         name: directorMember.name,
         profile_path: directorMember.profile_path
     } : null;
 
     return {
-        id: rawMovie.id,
-        title: rawMovie.title,
-        original_title: rawMovie.original_title,
-        release_date: rawMovie.release_date,
-        poster_path: rawMovie.poster_path,
-        genres: rawMovie.genres || [],
-        budget: rawMovie.budget || 0,
-        revenue: rawMovie.revenue || 0,
-        production_companies: rawMovie.production_companies || [],
-        production_countries: rawMovie.production_countries || [],
-        top_cast: topCast,
+        ...movie,
+        cast: sortedCast,
         director: director
     };
 }
@@ -143,11 +128,11 @@ async function startNewGame(): Promise<void> {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const rawData: RawMovieResponseWrapper | { movie: RawMovieResponse } = await response.json();
+        const rawData: MovieResponseWrapper | { movie: Movie } = await response.json();
         
         // Handle format with or without date wrapper
-        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
-        mysteryMovie = transformMovieResponse(rawMovie);
+        const movie = 'date' in rawData ? rawData.movie : rawData.movie;
+        mysteryMovie = transformMovieResponse(movie);
         
         console.log(mysteryMovie);
     } catch (error) {
@@ -293,11 +278,11 @@ async function selectMovie(movieId: number): Promise<void> {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const rawData: RawMovieResponseWrapper | { movie: RawMovieResponse } = await response.json();
+        const rawData: MovieResponseWrapper | { movie: Movie } = await response.json();
         
         // Handle format with or without date wrapper
-        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
-        guessedMovieDetails = transformMovieResponse(rawMovie);
+        const movie = 'date' in rawData ? rawData.movie : rawData.movie;
+        guessedMovieDetails = transformMovieResponse(movie);
     } catch (error) {
         console.error('Error fetching movie details:', error);
         alert('Błąd: Nie udało się załadować szczegółów filmu.');
@@ -405,12 +390,12 @@ function compareMovies(guessed: Movie, mystery: Movie): MovieComparison {
     const commonCountries = guessedCountries.filter(c => mysteryCountries.includes(c));
     
     // For cast, use all actors and preserve order
-    const guessedCastFull = (guessed.top_cast || []).map((a, index) => ({
+    const guessedCastFull = (guessed.cast || []).map((a, index) => ({
         name: a.name,
         isMatch: false,
         originalOrder: index
     }));
-    const mysteryCastNames = (mystery.top_cast || []).map(a => a.name);
+    const mysteryCastNames = (mystery.cast || []).map(a => a.name);
     const guessedCastWithMatches = guessedCastFull.map(actor => ({
         ...actor,
         isMatch: mysteryCastNames.includes(actor.name)
