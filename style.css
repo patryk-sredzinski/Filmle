@@ -456,14 +456,6 @@ h1 {
     color: #333;
 }
 
-.autocomplete-year {
-    color: #667eea;
-    font-weight: 500;
-    font-size: 0.9em;
-    margin-left: 6px;
-    font-family: 'Courier New', monospace;
-}
-
 .guesses-container {
     display: flex;
     flex-direction: column;
