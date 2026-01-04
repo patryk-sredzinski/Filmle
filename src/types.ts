@@ -76,7 +76,7 @@ export interface MovieResponseWrapper {
 // For mystery mode: min/max define the range, isClose indicates if it's a close match
 export interface YearComparison {
     value?: number; // For guess mode
-    arrow?: string; // For guess mode: '=', '↑', '↓', '↑↑', '↓↓', '?'
+    arrow?: string; // For guess mode: '=', '↑', '↓', '?'
     min?: number | null; // For mystery mode
     max?: number | null; // For mystery mode
     isClose?: boolean; // For mystery mode
@@ -84,7 +84,7 @@ export interface YearComparison {
 
 export interface BudgetComparison {
     value?: number; // For guess mode
-    arrow?: string; // For guess mode: '=', '↑', '↓', '↑↑', '↓↓', '?'
+    arrow?: string; // For guess mode: '=', '↑', '↓', '?'
     min?: number | null; // For mystery mode
     max?: number | null; // For mystery mode
     isClose?: boolean; // For mystery mode
@@ -92,7 +92,7 @@ export interface BudgetComparison {
 
 export interface RevenueComparison {
     value?: number; // For guess mode
-    arrow?: string; // For guess mode: '=', '↑', '↓', '↑↑', '↓↓', '?'
+    arrow?: string; // For guess mode: '=', '↑', '↓', '?'
     min?: number | null; // For mystery mode
     max?: number | null; // For mystery mode
     isClose?: boolean; // For mystery mode

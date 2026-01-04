@@ -22,9 +22,6 @@ export class YearHint {
             } else if (arrow === '↑' || arrow === '↓') {
                 color = 'yellow';
                 tooltip = `Rok wydania: ${year} ${arrow}\ntajemniczy film jest ${arrow === '↑' ? 'nowszy' : 'starszy'}`;
-            } else if (arrow === '↑↑' || arrow === '↓↓') {
-                color = 'red';
-                tooltip = `Rok wydania: ${year} ${arrow}\ntajemniczy film jest ${arrow === '↑↑' ? 'dużo nowszy' : 'dużo starszy'}`;
             } else {
                 color = 'neutral';
                 tooltip = `Rok wydania: ${year} ?\nbrak danych`;

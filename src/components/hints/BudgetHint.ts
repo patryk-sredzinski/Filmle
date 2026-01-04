@@ -24,9 +24,6 @@ export class BudgetHint {
             } else if (arrow === '↑' || arrow === '↓') {
                 color = 'yellow';
                 tooltip = `Budżet: ${budgetValue} ${arrow}\ntajemniczy film ma ${arrow === '↑' ? 'większy' : 'mniejszy'} budżet`;
-            } else if (arrow === '↑↑' || arrow === '↓↓') {
-                color = 'red';
-                tooltip = `Budżet: ${budgetValue} ${arrow}\ntajemniczy film ma ${arrow === '↑↑' ? 'dużo większy' : 'dużo mniejszy'} budżet`;
             } else {
                 color = 'neutral';
                 tooltip = `Budżet: ${budgetValue} ?\nbrak danych`;

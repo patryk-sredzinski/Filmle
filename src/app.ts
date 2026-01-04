@@ -665,12 +665,8 @@ function compareMovies(guessed: Movie, mystery: Movie): MovieComparison {
         const yearDiff = guessedYear - mysteryYear;
         if (yearDiff === 0) {
             yearArrow = '=';
-        } else if (yearDiff > 5) {
-            yearArrow = '↓↓';
         } else if (yearDiff > 0) {
             yearArrow = '↓';
-        } else if (yearDiff < -5) {
-            yearArrow = '↑↑';
         } else {
             yearArrow = '↑';
         }
@@ -698,8 +694,6 @@ function compareMovies(guessed: Movie, mystery: Movie): MovieComparison {
         const budgetRatio = Math.abs(budgetDiff) / Math.max(guessedBudget, mysteryBudget);
         if (budgetDiff === 0) {
             budgetArrow = '=';
-        } else if (budgetRatio > 0.3) {
-            budgetArrow = budgetDiff > 0 ? '↓↓' : '↑↑';
         } else {
             budgetArrow = budgetDiff > 0 ? '↓' : '↑';
         }
@@ -720,8 +714,6 @@ function compareMovies(guessed: Movie, mystery: Movie): MovieComparison {
         const revenueRatio = Math.abs(revenueDiff) / Math.max(guessedRevenue, mysteryRevenue);
         if (revenueDiff === 0) {
             revenueArrow = '=';
-        } else if (revenueRatio > 0.3) {
-            revenueArrow = revenueDiff > 0 ? '↓↓' : '↑↑';
         } else {
             revenueArrow = revenueDiff > 0 ? '↓' : '↑';
         }

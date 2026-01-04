@@ -12,12 +12,8 @@ export class YearHint {
                 tooltip = `Rok wydania: ${year} =\ntajemniczy film ma ten sam rok`;
             }
             else if (arrow === '↑' || arrow === '↓') {
-                color = 'yellow';
-                tooltip = `Rok wydania: ${year} ${arrow}\ntajemniczy film jest ${arrow === '↑' ? 'nowszy' : 'starszy'}`;
-            }
-            else if (arrow === '↑↑' || arrow === '↓↓') {
                 color = 'red';
-                tooltip = `Rok wydania: ${year} ${arrow}\ntajemniczy film jest ${arrow === '↑↑' ? 'dużo nowszy' : 'dużo starszy'}`;
+                tooltip = `Rok wydania: ${year} ${arrow}\ntajemniczy film jest ${arrow === '↑' ? 'nowszy' : 'starszy'}`;
             }
             else {
                 color = 'neutral';
@@ -55,13 +51,13 @@ export class YearHint {
             else if (min !== null && min !== undefined) {
                 value = min.toString();
                 arrow = '↑';
-                color = 'yellow';
+                color = 'red';
                 tooltip = `Rok wydania: >${min}\ntajemniczy film jest nowszy niż ${min}`;
             }
             else if (max !== null && max !== undefined) {
                 value = max.toString();
                 arrow = '↓';
-                color = 'yellow';
+                color = 'red';
                 tooltip = `Rok wydania: <${max}\ntajemniczy film jest starszy niż ${max}`;
             }
             return {

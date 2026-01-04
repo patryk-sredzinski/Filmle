@@ -14,12 +14,8 @@ export class RevenueHint {
                 tooltip = `Box Office: ${revenueValue} =\ntajemniczy film ma ten sam przychód`;
             }
             else if (arrow === '↑' || arrow === '↓') {
-                color = 'yellow';
-                tooltip = `Box Office: ${revenueValue} ${arrow}\ntajemniczy film ma ${arrow === '↑' ? 'większy' : 'mniejszy'} przychód`;
-            }
-            else if (arrow === '↑↑' || arrow === '↓↓') {
                 color = 'red';
-                tooltip = `Box Office: ${revenueValue} ${arrow}\ntajemniczy film ma ${arrow === '↑↑' ? 'dużo większy' : 'dużo mniejszy'} przychód`;
+                tooltip = `Box Office: ${revenueValue} ${arrow}\ntajemniczy film ma ${arrow === '↑' ? 'większy' : 'mniejszy'} przychód`;
             }
             else {
                 color = 'neutral';
@@ -51,20 +47,20 @@ export class RevenueHint {
                 else {
                     value = `${formatCurrencyShort(min)}<br>-<br>${formatCurrencyShort(max)}`;
                     arrow = '';
-                    color = 'yellow';
+                    color = 'red';
                     tooltip = `Box Office: ${formatCurrencyShort(min)} - ${formatCurrencyShort(max)}\ntajemniczy film ma przychód między ${formatCurrencyShort(min)} a ${formatCurrencyShort(max)}`;
                 }
             }
             else if (min !== null && min !== undefined) {
                 value = formatCurrencyShort(min);
                 arrow = '↑';
-                color = 'yellow';
+                color = 'red';
                 tooltip = `Box Office: >${formatCurrencyShort(min)}\ntajemniczy film ma większy przychód niż ${formatCurrencyShort(min)}`;
             }
             else if (max !== null && max !== undefined) {
                 value = formatCurrencyShort(max);
                 arrow = '↓';
-                color = 'yellow';
+                color = 'red';
                 tooltip = `Box Office: <${formatCurrencyShort(max)}\ntajemniczy film ma mniejszy przychód niż ${formatCurrencyShort(max)}`;
             }
             return {

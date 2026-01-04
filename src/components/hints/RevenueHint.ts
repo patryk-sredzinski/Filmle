@@ -24,9 +24,6 @@ export class RevenueHint {
             } else if (arrow === '↑' || arrow === '↓') {
                 color = 'yellow';
                 tooltip = `Box Office: ${revenueValue} ${arrow}\ntajemniczy film ma ${arrow === '↑' ? 'większy' : 'mniejszy'} przychód`;
-            } else if (arrow === '↑↑' || arrow === '↓↓') {
-                color = 'red';
-                tooltip = `Box Office: ${revenueValue} ${arrow}\ntajemniczy film ma ${arrow === '↑↑' ? 'dużo większy' : 'dużo mniejszy'} przychód`;
             } else {
                 color = 'neutral';
                 tooltip = `Box Office: ${revenueValue} ?\nbrak danych`;

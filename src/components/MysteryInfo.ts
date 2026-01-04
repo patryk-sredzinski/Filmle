@@ -174,12 +174,12 @@ export class MysteryInfo {
                 minYear = year;
                 maxYear = year;
                 break;
-            } else if (arrow === '↓' || arrow === '↓↓') {
+            } else if (arrow === '↓') {
                 // Guessed is newer, so mystery is older (maxYear)
                 if (maxYear === null || year < maxYear) {
                     maxYear = year;
                 }
-            } else if (arrow === '↑' || arrow === '↑↑') {
+            } else if (arrow === '↑') {
                 // Guessed is older, so mystery is newer (minYear)
                 if (minYear === null || year > minYear) {
                     minYear = year;
@@ -220,12 +220,12 @@ export class MysteryInfo {
                 minBudget = budget;
                 maxBudget = budget;
                 break;
-            } else if (arrow === '↓' || arrow === '↓↓') {
+            } else if (arrow === '↓') {
                 // Guessed is higher, so mystery is lower (maxBudget)
                 if (maxBudget === null || budget < maxBudget) {
                     maxBudget = budget;
                 }
-            } else if (arrow === '↑' || arrow === '↑↑') {
+            } else if (arrow === '↑') {
                 // Guessed is lower, so mystery is higher (minBudget)
                 if (minBudget === null || budget > minBudget) {
                     minBudget = budget;
@@ -245,12 +245,12 @@ export class MysteryInfo {
                 minRevenue = revenue;
                 maxRevenue = revenue;
                 break;
-            } else if (arrow === '↓' || arrow === '↓↓') {
+            } else if (arrow === '↓') {
                 // Guessed is higher, so mystery is lower (maxRevenue)
                 if (maxRevenue === null || revenue < maxRevenue) {
                     maxRevenue = revenue;
                 }
-            } else if (arrow === '↑' || arrow === '↑↑') {
+            } else if (arrow === '↑') {
                 // Guessed is lower, so mystery is higher (minRevenue)
                 if (minRevenue === null || revenue > minRevenue) {
                     minRevenue = revenue;
