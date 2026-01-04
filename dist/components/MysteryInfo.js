@@ -43,16 +43,40 @@ export class MysteryInfo {
         const groups = [];
         const allGuesses = this.config.allGuesses;
         if (allGuesses.length === 0) {
-            // Empty state
+            // Empty state - but check for revealed hints
+            const revealedGenres = [];
+            if (this.config.mysteryMovie) {
+                this.config.mysteryMovie.genres.forEach((genre, index) => {
+                    if (this.config.hintState.revealedGenres.has(index)) {
+                        revealedGenres.push(genre);
+                    }
+                });
+            }
+            const revealedActors = [];
+            if (this.config.mysteryMovie) {
+                this.config.mysteryMovie.top_cast.forEach((actor, index) => {
+                    if (this.config.hintState.revealedActors.has(index)) {
+                        revealedActors.push(actor);
+                    }
+                });
+            }
             return [
                 { type: 'year', items: [YearHint.create({ comparison: { min: null, max: null } })] },
-                { type: 'genres', items: [], emptyContent: 'Gatunki: ?\nbrak danych' },
+                {
+                    type: 'genres',
+                    items: revealedGenres.map(genre => GenreHint.create({ genre, isMatch: true })),
+                    emptyContent: revealedGenres.length === 0 ? 'Gatunki: ?\nbrak danych' : undefined
+                },
                 { type: 'budget', items: [BudgetHint.create({ comparison: { min: null, max: null } })] },
                 { type: 'revenue', items: [RevenueHint.create({ comparison: { min: null, max: null } })] },
                 { type: 'companies', items: [], emptyContent: 'Studia: ?\nbrak danych' },
                 { type: 'countries', items: [], emptyContent: 'Kraje: ?\nbrak danych' },
                 { type: 'director', items: [], emptyContent: 'Reżyser: ?\nbrak danych' },
-                { type: 'cast', items: [], emptyContent: 'Aktorzy: ?\nbrak danych' }
+                {
+                    type: 'cast',
+                    items: revealedActors.map(actor => ActorHint.create({ actor, isMatch: true })),
+                    emptyContent: revealedActors.length === 0 ? 'Aktorzy: ?\nbrak danych' : undefined
+                }
             ];
         }
         // Calculate year range based on arrows
@@ -87,6 +111,14 @@ export class MysteryInfo {
             guess.comparison.genres.items.forEach(item => {
                 if (item.isMatch && !matchedGenresMap.has(item.name)) {
                     matchedGenresMap.set(item.name, { name: item.name });
+                }
+            });
+        }
+        // Add revealed genres from hints
+        if (this.config.mysteryMovie) {
+            this.config.mysteryMovie.genres.forEach((genre, index) => {
+                if (this.config.hintState.revealedGenres.has(index)) {
+                    matchedGenresMap.set(genre.name, genre);
                 }
             });
         }
@@ -169,6 +201,14 @@ export class MysteryInfo {
             guess.comparison.cast.items.forEach(item => {
                 if (item.isMatch && !matchedCastMap.has(item.name)) {
                     matchedCastMap.set(item.name, { name: item.name, profile_path: item.profile_path });
+                }
+            });
+        }
+        // Add revealed actors from hints
+        if (this.config.mysteryMovie) {
+            this.config.mysteryMovie.top_cast.forEach((actor, index) => {
+                if (this.config.hintState.revealedActors.has(index)) {
+                    matchedCastMap.set(actor.name, actor);
                 }
             });
         }

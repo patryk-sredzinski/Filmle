@@ -9,9 +9,12 @@ import { CountryHint } from './hints/CountryHint.js';
 import { CompanyHint } from './hints/CompanyHint.js';
 import { DirectorHint } from './hints/DirectorHint.js';
 import { ActorHint } from './hints/ActorHint.js';
+import { HintState } from '../hints.js';
 
 export interface MysteryInfoConfig {
     allGuesses: Array<{ movie: Movie; comparison: MovieComparison }>;
+    mysteryMovie: Movie | null;
+    hintState: HintState;
 }
 
 export class MysteryInfo {
@@ -59,16 +62,42 @@ export class MysteryInfo {
         const allGuesses = this.config.allGuesses;
 
         if (allGuesses.length === 0) {
-            // Empty state
+            // Empty state - but check for revealed hints
+            const revealedGenres: Genre[] = [];
+            if (this.config.mysteryMovie) {
+                this.config.mysteryMovie.genres.forEach((genre, index) => {
+                    if (this.config.hintState.revealedGenres.has(index)) {
+                        revealedGenres.push(genre);
+                    }
+                });
+            }
+            
+            const revealedActors: CastMember[] = [];
+            if (this.config.mysteryMovie) {
+                this.config.mysteryMovie.top_cast.forEach((actor, index) => {
+                    if (this.config.hintState.revealedActors.has(index)) {
+                        revealedActors.push(actor);
+                    }
+                });
+            }
+            
             return [
                 { type: 'year', items: [YearHint.create({ comparison: { min: null, max: null } })] },
-                { type: 'genres', items: [], emptyContent: 'Gatunki: ?\nbrak danych' },
+                { 
+                    type: 'genres', 
+                    items: revealedGenres.map(genre => GenreHint.create({ genre, isMatch: true })),
+                    emptyContent: revealedGenres.length === 0 ? 'Gatunki: ?\nbrak danych' : undefined
+                },
                 { type: 'budget', items: [BudgetHint.create({ comparison: { min: null, max: null } })] },
                 { type: 'revenue', items: [RevenueHint.create({ comparison: { min: null, max: null } })] },
                 { type: 'companies', items: [], emptyContent: 'Studia: ?\nbrak danych' },
                 { type: 'countries', items: [], emptyContent: 'Kraje: ?\nbrak danych' },
                 { type: 'director', items: [], emptyContent: 'Reżyser: ?\nbrak danych' },
-                { type: 'cast', items: [], emptyContent: 'Aktorzy: ?\nbrak danych' }
+                { 
+                    type: 'cast', 
+                    items: revealedActors.map(actor => ActorHint.create({ actor, isMatch: true })),
+                    emptyContent: revealedActors.length === 0 ? 'Aktorzy: ?\nbrak danych' : undefined
+                }
             ];
         }
 
@@ -106,6 +135,16 @@ export class MysteryInfo {
                 }
             });
         }
+        
+        // Add revealed genres from hints
+        if (this.config.mysteryMovie) {
+            this.config.mysteryMovie.genres.forEach((genre, index) => {
+                if (this.config.hintState.revealedGenres.has(index)) {
+                    matchedGenresMap.set(genre.name, genre);
+                }
+            });
+        }
+        
         const matchedGenres = Array.from(matchedGenresMap.values());
 
         // Calculate budget range based on arrows
@@ -189,6 +228,16 @@ export class MysteryInfo {
                 }
             });
         }
+        
+        // Add revealed actors from hints
+        if (this.config.mysteryMovie) {
+            this.config.mysteryMovie.top_cast.forEach((actor, index) => {
+                if (this.config.hintState.revealedActors.has(index)) {
+                    matchedCastMap.set(actor.name, actor);
+                }
+            });
+        }
+        
         const matchedCast = Array.from(matchedCastMap.values());
 
         // Check for matched director

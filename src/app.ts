@@ -17,12 +17,24 @@ import {
 } from './types';
 import { GuessCard } from './components/GuessCard.js';
 import { MysteryInfo } from './components/MysteryInfo.js';
+import { HintsMenu } from './components/HintsMenu.js';
+import { HINTS, HintType, HintState } from './hints.js';
 
 // Game state
 let mysteryMovie: Movie | null = null;
 let attempts: number = 0;
 let gameWon: boolean = false;
 let allGuesses: Array<{ movie: Movie; comparison: MovieComparison }> = [];
+
+// Hints state
+let hintsState: HintState = {
+    showLetters: false,
+    revealedLetters: new Set(),
+    revealedGenres: new Set(),
+    revealedActors: new Set()
+};
+let hints = [...HINTS];
+let hintsMenuComponent: HintsMenu | null = null;
 
 // API base URL
 const API_BASE = 'https://filmle-api-git-main-patryk-sredzinskis-projects.vercel.app/api';
@@ -78,6 +90,7 @@ let winAttempts = document.getElementById('winAttempts') as HTMLElement;
 const movieTitleHint = document.getElementById('movieTitleHint') as HTMLElement;
 const mysteryInfoContainer = document.getElementById('mysteryInfo') as HTMLElement;
 let mysteryInfoComponent: MysteryInfo | null = null;
+const gameInfoContainer = document.querySelector('.game-info') as HTMLElement;
 
 // Initialize game
 async function init(): Promise<void> {
@@ -172,8 +185,43 @@ async function startNewGame(): Promise<void> {
     movieSearch.disabled = false;
     movieSearch.focus();
     
+    // Reset hints
+    hintsState = {
+        showLetters: false,
+        revealedLetters: new Set(),
+        revealedGenres: new Set(),
+        revealedActors: new Set()
+    };
+    hints = [...HINTS];
+    hints[1].enabled = false; // reveal_random_letter disabled initially
+    
+    // Initialize hints menu
+    if (gameInfoContainer && !hintsMenuComponent) {
+        hintsMenuComponent = new HintsMenu({
+            hints: hints,
+            hintState: hintsState,
+            onHintClick: handleHintClick
+        });
+        const hintsMenuElement = hintsMenuComponent.render();
+        gameInfoContainer.appendChild(hintsMenuElement);
+    } else if (hintsMenuComponent) {
+        hintsMenuComponent.update({
+            hints: hints,
+            hintState: hintsState
+        });
+    }
+    
     updateMovieTitleHint();
     updateMysteryInfo();
+    
+    // Update hints availability after game starts
+    updateHintsAvailability();
+    if (hintsMenuComponent) {
+        hintsMenuComponent.update({
+            hints: hints,
+            hintState: hintsState
+        });
+    }
 }
 
 // Generate underscores hint for movie title
@@ -182,11 +230,19 @@ function updateMovieTitleHint(): void {
     
     const title = mysteryMovie.title || mysteryMovie.original_title || '';
     
+    // If showLetters hint not used, show nothing
+    if (!hintsState.showLetters) {
+        movieTitleHint.textContent = '';
+        return;
+    }
+    
     const hint = title
         .split('')
-        .map(char => {
+        .map((char, index) => {
             if (char === ' ') {
                 return ' ';
+            } else if (hintsState.revealedLetters.has(index)) {
+                return char;
             } else {
                 return '_';
             }
@@ -194,6 +250,125 @@ function updateMovieTitleHint(): void {
         .join(' ');
     
     movieTitleHint.textContent = hint;
+}
+
+// Check if hint is still available (has more items to reveal)
+function isHintAvailable(hintType: HintType): boolean {
+    if (!mysteryMovie) return false;
+    
+    switch (hintType) {
+        case 'show_letters':
+            return !hintsState.showLetters;
+            
+        case 'reveal_random_letter':
+            if (!hintsState.showLetters) return false;
+            const title = mysteryMovie.title || mysteryMovie.original_title || '';
+            return title.split('').some((char, index) => 
+                char !== ' ' && !hintsState.revealedLetters.has(index)
+            );
+            
+        case 'reveal_genre':
+            return mysteryMovie.genres.some((_, index) => 
+                !hintsState.revealedGenres.has(index)
+            );
+            
+        case 'reveal_actor':
+            return mysteryMovie.top_cast.some((_, index) => 
+                !hintsState.revealedActors.has(index)
+            );
+            
+        default:
+            return false;
+    }
+}
+
+// Update hints availability
+function updateHintsAvailability(): void {
+    hints.forEach(hint => {
+        if (hint.id === 'show_letters') {
+            hint.enabled = isHintAvailable('show_letters');
+            hint.used = !isHintAvailable('show_letters');
+        } else if (hint.id === 'reveal_random_letter') {
+            hint.enabled = isHintAvailable('reveal_random_letter');
+        } else if (hint.id === 'reveal_genre') {
+            hint.enabled = isHintAvailable('reveal_genre');
+        } else if (hint.id === 'reveal_actor') {
+            hint.enabled = isHintAvailable('reveal_actor');
+        }
+    });
+}
+
+// Handle hint click
+function handleHintClick(hintType: HintType): void {
+    if (!mysteryMovie) return;
+    
+    const hint = hints.find(h => h.id === hintType);
+    if (!hint || !hint.enabled) return;
+    
+    // For show_letters, check if already used
+    if (hintType === 'show_letters' && hint.used) return;
+    
+    switch (hintType) {
+        case 'show_letters':
+            hintsState.showLetters = true;
+            hint.used = true;
+            // Enable reveal_random_letter
+            const revealLetterHint = hints.find(h => h.id === 'reveal_random_letter');
+            if (revealLetterHint) {
+                revealLetterHint.enabled = true;
+            }
+            updateMovieTitleHint();
+            break;
+            
+        case 'reveal_random_letter':
+            if (!hintsState.showLetters) return;
+            const title = mysteryMovie.title || mysteryMovie.original_title || '';
+            const hiddenIndices: number[] = [];
+            title.split('').forEach((char, index) => {
+                if (char !== ' ' && !hintsState.revealedLetters.has(index)) {
+                    hiddenIndices.push(index);
+                }
+            });
+            if (hiddenIndices.length > 0) {
+                const randomIndex = hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
+                hintsState.revealedLetters.add(randomIndex);
+                updateMovieTitleHint();
+            }
+            break;
+            
+        case 'reveal_genre':
+            // Reveal first unrevealed genre
+            for (let index = 0; index < mysteryMovie.genres.length; index++) {
+                if (!hintsState.revealedGenres.has(index)) {
+                    hintsState.revealedGenres.add(index);
+                    updateMysteryInfo();
+                    break;
+                }
+            }
+            break;
+            
+        case 'reveal_actor':
+            // Reveal first unrevealed actor
+            for (let index = 0; index < mysteryMovie.top_cast.length; index++) {
+                if (!hintsState.revealedActors.has(index)) {
+                    hintsState.revealedActors.add(index);
+                    updateMysteryInfo();
+                    break;
+                }
+            }
+            break;
+    }
+    
+    // Update hints availability
+    updateHintsAvailability();
+    
+    // Update hints menu
+    if (hintsMenuComponent) {
+        hintsMenuComponent.update({
+            hints: hints,
+            hintState: hintsState
+        });
+    }
 }
 
 // Handle search input
@@ -609,7 +784,11 @@ function formatCurrencyShort(amount: number): string {
 function updateMysteryInfo(): void {
     if (!mysteryInfoContainer) return;
     
-    mysteryInfoComponent = new MysteryInfo({ allGuesses });
+    mysteryInfoComponent = new MysteryInfo({ 
+        allGuesses,
+        mysteryMovie,
+        hintState: hintsState
+    });
     const mysteryInfoElement = mysteryInfoComponent.render();
     
     // Replace the container content

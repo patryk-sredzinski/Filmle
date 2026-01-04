@@ -60,6 +60,7 @@ h1 {
     border-radius: 10px;
     flex-wrap: wrap;
     gap: 15px;
+    position: relative;
 }
 
 .attempts-counter {
@@ -721,6 +722,97 @@ h1 {
     min-height: 20px;
 }
 
+/* Hints menu styles */
+.hints-menu-container {
+    position: relative;
+}
+
+.hints-menu-button {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+.hints-menu-button:hover {
+    background: #5568d3;
+}
+
+.hints-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 10px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+    z-index: 1000;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.hints-menu.hidden {
+    display: none;
+}
+
+.hints-menu-title {
+    padding: 15px 20px;
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.hints-list {
+    padding: 10px;
+}
+
+.hint-item {
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 2px solid #e0e0e0;
+    background: #f8f9fa;
+    transition: all 0.2s;
+}
+
+.hint-item:not(.disabled):not(.used):hover {
+    background: #e8e9ff;
+    border-color: #667eea;
+    cursor: pointer;
+}
+
+.hint-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hint-item.used {
+    background: #d4edda;
+    border-color: #28a745;
+    opacity: 0.8;
+}
+
+.hint-item-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 1em;
+}
+
+.hint-item-description {
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.4;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 20px;
@@ -737,6 +829,12 @@ h1 {
 
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .hints-menu {
+        right: auto;
+        left: 0;
+        min-width: calc(100% - 20px);
     }
 }
 
