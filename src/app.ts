@@ -18,6 +18,7 @@ import { GuessCard } from './components/GuessCard.js';
 import { MysteryInfo } from './components/MysteryInfo.js';
 import { HintsMenu } from './components/HintsMenu.js';
 import { HINTS, HintType, HintState } from './hints.js';
+import { getDirector } from './utils.js';
 
 // Game state
 let mysteryMovie: Movie | null = null;
@@ -682,10 +683,12 @@ function compareMovies(guessed: Movie, mystery: Movie): MovieComparison {
     };
     
     // Director comparison - just isMatch
+    const guessedDirector = getDirector(guessed);
+    const mysteryDirector = getDirector(mystery);
     const directorComparison: DirectorComparison = {
-        isMatch: guessed.director !== null && 
-                 mystery.director !== null && 
-                 guessed.director?.name === mystery.director?.name
+        isMatch: guessedDirector !== null && 
+                 mysteryDirector !== null && 
+                 guessedDirector.name === mysteryDirector.name
     };
     
     return {

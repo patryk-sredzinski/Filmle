@@ -7,6 +7,7 @@ import { CountryHint } from './hints/CountryHint.js';
 import { CompanyHint } from './hints/CompanyHint.js';
 import { DirectorHint } from './hints/DirectorHint.js';
 import { ActorHint } from './hints/ActorHint.js';
+import { getDirector } from '../utils.js';
 export class MysteryInfo {
     constructor(config) {
         this.element = null;
@@ -257,8 +258,9 @@ export class MysteryInfo {
         // Check for matched director
         let matchedDirector = null;
         for (const guess of allGuesses) {
-            if (guess.comparison.director.isMatch && guess.movie.director) {
-                matchedDirector = guess.movie.director;
+            const director = getDirector(guess.movie);
+            if (guess.comparison.director.isMatch && director) {
+                matchedDirector = director;
                 break;
             }
         }

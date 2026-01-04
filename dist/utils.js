@@ -100,4 +100,17 @@ export function getCompanyInitials(name) {
         return '?';
     return name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
 }
+export function getDirector(movie) {
+    if (!movie.crew || movie.crew.length === 0) {
+        return null;
+    }
+    const director = movie.crew.find(member => member.job === 'Director' || member.job === 'director');
+    if (!director) {
+        return null;
+    }
+    return {
+        name: director.name,
+        profile_path: director.profile_path
+    };
+}
 //# sourceMappingURL=utils.js.map

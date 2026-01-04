@@ -10,6 +10,7 @@ import { CompanyHint } from './hints/CompanyHint.js';
 import { DirectorHint } from './hints/DirectorHint.js';
 import { ActorHint } from './hints/ActorHint.js';
 import { HintState } from '../hints.js';
+import { getDirector } from '../utils.js';
 
 export interface MysteryInfoConfig {
     allGuesses: Array<{ movie: Movie; comparison: MovieComparison }>;
@@ -295,8 +296,9 @@ export class MysteryInfo {
         // Check for matched director
         let matchedDirector: Director | null = null;
         for (const guess of allGuesses) {
-            if (guess.comparison.director.isMatch && guess.movie.director) {
-                matchedDirector = guess.movie.director;
+            const director = getDirector(guess.movie);
+            if (guess.comparison.director.isMatch && director) {
+                matchedDirector = director;
                 break;
             }
         }

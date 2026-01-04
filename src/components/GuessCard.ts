@@ -9,6 +9,7 @@ import { CountryHint } from './hints/CountryHint.js';
 import { CompanyHint } from './hints/CompanyHint.js';
 import { DirectorHint } from './hints/DirectorHint.js';
 import { ActorHint } from './hints/ActorHint.js';
+import { getDirector } from '../utils.js';
 
 export interface GuessCardConfig {
     movie: Movie;
@@ -129,10 +130,11 @@ export class GuessCard {
         });
 
         // Director - single item (if exists)
-        if (movie.director) {
+        const director = getDirector(movie);
+        if (director) {
             groups.push({
                 type: 'director',
-                items: [DirectorHint.create({ director: movie.director, isMatch: comparison.director.isMatch })]
+                items: [DirectorHint.create({ director, isMatch: comparison.director.isMatch })]
             });
         } else {
             groups.push({

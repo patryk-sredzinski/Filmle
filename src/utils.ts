@@ -1,3 +1,5 @@
+import { Movie, Director } from './types.js';
+
 export function formatCurrencyShort(amount: number): string {
     if (amount === 0 || !amount) return '?';
     
@@ -98,5 +100,24 @@ export function getActorInitials(name: string | null | undefined): string {
 export function getCompanyInitials(name: string | null | undefined): string {
     if (!name) return '?';
     return name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+}
+
+export function getDirector(movie: Movie): Director | null {
+    if (!movie.crew || movie.crew.length === 0) {
+        return null;
+    }
+    
+    const director = movie.crew.find(member => 
+        member.job === 'Director' || member.job === 'director'
+    );
+    
+    if (!director) {
+        return null;
+    }
+    
+    return {
+        name: director.name,
+        profile_path: director.profile_path
+    };
 }
 

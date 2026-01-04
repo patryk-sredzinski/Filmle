@@ -24,6 +24,12 @@ export interface Director {
     profile_path: string | null;
 }
 
+export interface CrewMember {
+    name: string;
+    profile_path: string | null;
+    job: string;
+}
+
 export interface Movie {
     id: number;
     title: string;
@@ -37,7 +43,7 @@ export interface Movie {
     production_countries: ProductionCountry[];
     top_cast?: CastMember[];
     cast?: CastMember[];
-    director: Director | null;
+    crew?: CrewMember[];
     description?: string | null;
     quote_pl?: string | null;
     quote_en?: string | null;
