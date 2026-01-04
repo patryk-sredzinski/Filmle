@@ -1,114 +1,81 @@
-import { HintGroupConfig } from '../HintGroup.js';
+import { HintItemConfig } from '../HintItem.js';
 import { YearComparison } from '../../types.js';
 
 export interface YearHintConfig {
-    year: number | string;
-    comparison?: YearComparison;
-    // For mystery info
-    minYear?: number | null;
-    maxYear?: number | null;
+    comparison: YearComparison;
 }
 
 export class YearHint {
-    static createForGuess(config: YearHintConfig): HintGroupConfig {
-        const { year, comparison } = config;
-        if (!comparison) {
+    static create(config: YearHintConfig): HintItemConfig {
+        const { comparison } = config;
+        
+        // If value exists, it's guess mode
+        if (comparison.value !== undefined && comparison.value !== null) {
+            const year = comparison.value;
+            const arrow = comparison.arrow || '?';
+            let color: 'green' | 'yellow' | 'red' | 'neutral' = 'neutral';
+            let tooltip = `Rok wydania: ${year} ${arrow}`;
+
+            if (arrow === '=') {
+                color = 'green';
+                tooltip = `Rok wydania: ${year} =\ntajemniczy film ma ten sam rok`;
+            } else if (arrow === '↑' || arrow === '↓') {
+                color = 'yellow';
+                tooltip = `Rok wydania: ${year} ${arrow}\ntajemniczy film jest ${arrow === '↑' ? 'nowszy' : 'starszy'}`;
+            } else if (arrow === '↑↑' || arrow === '↓↓') {
+                color = 'red';
+                tooltip = `Rok wydania: ${year} ${arrow}\ntajemniczy film jest ${arrow === '↑↑' ? 'dużo nowszy' : 'dużo starszy'}`;
+            } else {
+                color = 'neutral';
+                tooltip = `Rok wydania: ${year} ?\nbrak danych`;
+            }
+
             return {
-                type: 'year',
-                items: [{
-                    type: 'inner',
-                    color: 'neutral',
-                    value: year.toString(),
-                    arrow: '?',
-                    tooltip: `Rok wydania: ${year} ?\nbrak danych`
-                }]
-            };
-        }
-
-        let color: 'green' | 'yellow' | 'red' | 'neutral' = 'neutral';
-        let arrow = '';
-        let tooltip = '';
-
-        if (comparison.result === 'unknown') {
-            color = 'neutral';
-            arrow = '?';
-            tooltip = `Rok wydania: ${year} ?\nbrak danych`;
-        } else if (comparison.result === 'match') {
-            color = 'green';
-            arrow = '=';
-            tooltip = `Rok wydania: ${year} =\ntajemniczy film ma ten sam rok`;
-        } else if (comparison.result === 'much_newer') {
-            color = 'red';
-            arrow = '↓↓';
-            tooltip = `Rok wydania: ${year} ↓↓\ntajemniczy film jest dużo starszy`;
-        } else if (comparison.result === 'newer') {
-            color = 'yellow';
-            arrow = '↓';
-            tooltip = `Rok wydania: ${year} ↓\ntajemniczy film jest starszy`;
-        } else if (comparison.result === 'older') {
-            color = 'yellow';
-            arrow = '↑';
-            tooltip = `Rok wydania: ${year} ↑\ntajemniczy film jest nowszy`;
-        } else if (comparison.result === 'much_older') {
-            color = 'red';
-            arrow = '↑↑';
-            tooltip = `Rok wydania: ${year} ↑↑\ntajemniczy film jest dużo nowszy`;
-        }
-
-        return {
-            type: 'year',
-            items: [{
                 type: 'inner',
                 color,
                 value: year.toString(),
                 arrow,
                 tooltip
-            }]
-        };
-    }
+            };
+        } else {
+            // Mystery mode: show min/max range
+            const { min, max, isClose } = comparison;
+            let color: 'green' | 'yellow' | 'red' | 'neutral' = 'neutral';
+            let value = '?';
+            let arrow = '';
+            let tooltip = 'Rok wydania: ?\nbrak danych';
 
-    static createForMystery(config: YearHintConfig): HintGroupConfig {
-        const { minYear, maxYear } = config;
-
-        let color: 'green' | 'yellow' | 'red' | 'neutral' = 'neutral';
-        let value = '?';
-        let arrow = '';
-        let tooltip = 'Rok wydania: ?\nbrak danych';
-
-        if (minYear !== null && minYear !== undefined && maxYear !== null && maxYear !== undefined) {
-            if (minYear === maxYear) {
-                value = minYear.toString();
-                arrow = '=';
-                color = 'green';
-                tooltip = `Rok wydania: ${minYear} =\ntajemniczy film ma ten sam rok`;
-            } else {
-                value = `${minYear}<br>-<br>${maxYear}`;
-                arrow = '';
+            if (min !== null && min !== undefined && max !== null && max !== undefined) {
+                if (min === max) {
+                    value = min.toString();
+                    arrow = '=';
+                    color = 'green';
+                    tooltip = `Rok wydania: ${min} =\ntajemniczy film ma ten sam rok`;
+                } else {
+                    value = `${min}<br>-<br>${max}`;
+                    arrow = '';
+                    color = 'yellow';
+                    tooltip = `Rok wydania: ${min}-${max}\ntajemniczy film jest między ${min} a ${max}`;
+                }
+            } else if (min !== null && min !== undefined) {
+                value = min.toString();
+                arrow = '↑';
                 color = 'yellow';
-                tooltip = `Rok wydania: ${minYear}-${maxYear}\ntajemniczy film jest między ${minYear} a ${maxYear}`;
+                tooltip = `Rok wydania: >${min}\ntajemniczy film jest nowszy niż ${min}`;
+            } else if (max !== null && max !== undefined) {
+                value = max.toString();
+                arrow = '↓';
+                color = 'yellow';
+                tooltip = `Rok wydania: <${max}\ntajemniczy film jest starszy niż ${max}`;
             }
-        } else if (minYear !== null && minYear !== undefined) {
-            value = minYear.toString();
-            arrow = '↑';
-            color = 'yellow';
-            tooltip = `Rok wydania: >${minYear}\ntajemniczy film jest nowszy niż ${minYear}`;
-        } else if (maxYear !== null && maxYear !== undefined) {
-            value = maxYear.toString();
-            arrow = '↓';
-            color = 'yellow';
-            tooltip = `Rok wydania: <${maxYear}\ntajemniczy film jest starszy niż ${maxYear}`;
-        }
 
-        return {
-            type: 'year',
-            items: [{
+            return {
                 type: 'inner',
                 color,
                 value,
                 arrow,
                 tooltip
-            }]
-        };
+            };
+        }
     }
 }
-

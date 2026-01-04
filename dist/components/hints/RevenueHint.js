@@ -1,109 +1,81 @@
 import { formatCurrencyShort } from '../../utils.js';
 export class RevenueHint {
-    static createForGuess(config) {
-        const { revenue, comparison } = config;
-        const revenueValue = formatCurrencyShort(revenue || 0);
-        if (!comparison) {
-            return {
-                type: 'revenue',
-                items: [{
-                        type: 'inner',
-                        color: 'neutral',
-                        icon: '💵',
-                        value: revenueValue,
-                        arrow: '?',
-                        tooltip: `Box Office: ${revenueValue} ?\nbrak danych`
-                    }]
-            };
-        }
-        let color = 'neutral';
-        let arrow = '';
-        let tooltip = '';
-        if (comparison.result === 'unknown') {
-            color = 'neutral';
-            arrow = '?';
-            tooltip = `Box Office: ${revenueValue} ?\nbrak danych`;
-        }
-        else if (comparison.result === 'match') {
-            color = 'green';
-            arrow = '=';
-            tooltip = `Box Office: ${revenueValue} =\ntajemniczy film ma ten sam przychód`;
-        }
-        else if (comparison.result === 'much_higher') {
-            color = 'red';
-            arrow = '↓↓';
-            tooltip = `Box Office: ${revenueValue} ↓↓\ntajemniczy film ma dużo mniejszy przychód`;
-        }
-        else if (comparison.result === 'higher') {
-            color = 'yellow';
-            arrow = '↓';
-            tooltip = `Box Office: ${revenueValue} ↓\ntajemniczy film ma mniejszy przychód`;
-        }
-        else if (comparison.result === 'lower') {
-            color = 'yellow';
-            arrow = '↑';
-            tooltip = `Box Office: ${revenueValue} ↑\ntajemniczy film ma większy przychód`;
-        }
-        else if (comparison.result === 'much_lower') {
-            color = 'red';
-            arrow = '↑↑';
-            tooltip = `Box Office: ${revenueValue} ↑↑\ntajemniczy film ma dużo większy przychód`;
-        }
-        return {
-            type: 'revenue',
-            items: [{
-                    type: 'inner',
-                    color,
-                    icon: '💵',
-                    value: revenueValue,
-                    arrow,
-                    tooltip
-                }]
-        };
-    }
-    static createForMystery(config) {
-        const { minRevenue, maxRevenue } = config;
-        let color = 'neutral';
-        let value = '?';
-        let arrow = '';
-        let tooltip = 'Box Office: ?\nbrak danych';
-        if (minRevenue !== null && minRevenue !== undefined && maxRevenue !== null && maxRevenue !== undefined) {
-            if (Math.abs(minRevenue - maxRevenue) / Math.max(minRevenue, maxRevenue) < 0.1) {
-                value = formatCurrencyShort(minRevenue);
-                arrow = '=';
+    static create(config) {
+        const { comparison } = config;
+        // If value exists, it's guess mode
+        if (comparison.value !== undefined && comparison.value !== null && comparison.value !== 0) {
+            const revenue = comparison.value;
+            const revenueValue = formatCurrencyShort(revenue);
+            const arrow = comparison.arrow || '?';
+            let color = 'neutral';
+            let tooltip = `Box Office: ${revenueValue} ${arrow}`;
+            if (arrow === '=') {
                 color = 'green';
-                tooltip = `Box Office: ${formatCurrencyShort(minRevenue)} =\ntajemniczy film ma ten sam przychód`;
+                tooltip = `Box Office: ${revenueValue} =\ntajemniczy film ma ten sam przychód`;
+            }
+            else if (arrow === '↑' || arrow === '↓') {
+                color = 'yellow';
+                tooltip = `Box Office: ${revenueValue} ${arrow}\ntajemniczy film ma ${arrow === '↑' ? 'większy' : 'mniejszy'} przychód`;
+            }
+            else if (arrow === '↑↑' || arrow === '↓↓') {
+                color = 'red';
+                tooltip = `Box Office: ${revenueValue} ${arrow}\ntajemniczy film ma ${arrow === '↑↑' ? 'dużo większy' : 'dużo mniejszy'} przychód`;
             }
             else {
-                value = `${formatCurrencyShort(minRevenue)}<br>-<br>${formatCurrencyShort(maxRevenue)}`;
-                arrow = '';
-                color = 'yellow';
-                tooltip = `Box Office: ${formatCurrencyShort(minRevenue)} - ${formatCurrencyShort(maxRevenue)}\ntajemniczy film ma przychód między ${formatCurrencyShort(minRevenue)} a ${formatCurrencyShort(maxRevenue)}`;
+                color = 'neutral';
+                tooltip = `Box Office: ${revenueValue} ?\nbrak danych`;
             }
+            return {
+                type: 'inner',
+                color,
+                icon: '💵',
+                value: revenueValue,
+                arrow,
+                tooltip
+            };
         }
-        else if (minRevenue !== null && minRevenue !== undefined) {
-            value = formatCurrencyShort(minRevenue);
-            arrow = '↑';
-            color = 'yellow';
-            tooltip = `Box Office: >${formatCurrencyShort(minRevenue)}\ntajemniczy film ma większy przychód niż ${formatCurrencyShort(minRevenue)}`;
+        else {
+            // Mystery mode: show min/max range
+            const { min, max, isClose } = comparison;
+            let color = 'neutral';
+            let value = '?';
+            let arrow = '';
+            let tooltip = 'Box Office: ?\nbrak danych';
+            if (min !== null && min !== undefined && max !== null && max !== undefined) {
+                if (Math.abs(min - max) / Math.max(min, max) < 0.1 || isClose) {
+                    value = formatCurrencyShort(min);
+                    arrow = '=';
+                    color = 'green';
+                    tooltip = `Box Office: ${formatCurrencyShort(min)} =\ntajemniczy film ma ten sam przychód`;
+                }
+                else {
+                    value = `${formatCurrencyShort(min)}<br>-<br>${formatCurrencyShort(max)}`;
+                    arrow = '';
+                    color = 'yellow';
+                    tooltip = `Box Office: ${formatCurrencyShort(min)} - ${formatCurrencyShort(max)}\ntajemniczy film ma przychód między ${formatCurrencyShort(min)} a ${formatCurrencyShort(max)}`;
+                }
+            }
+            else if (min !== null && min !== undefined) {
+                value = formatCurrencyShort(min);
+                arrow = '↑';
+                color = 'yellow';
+                tooltip = `Box Office: >${formatCurrencyShort(min)}\ntajemniczy film ma większy przychód niż ${formatCurrencyShort(min)}`;
+            }
+            else if (max !== null && max !== undefined) {
+                value = formatCurrencyShort(max);
+                arrow = '↓';
+                color = 'yellow';
+                tooltip = `Box Office: <${formatCurrencyShort(max)}\ntajemniczy film ma mniejszy przychód niż ${formatCurrencyShort(max)}`;
+            }
+            return {
+                type: 'inner',
+                color,
+                icon: '💵',
+                value,
+                arrow,
+                tooltip
+            };
         }
-        else if (maxRevenue !== null && maxRevenue !== undefined) {
-            value = formatCurrencyShort(maxRevenue);
-            arrow = '↓';
-            color = 'yellow';
-            tooltip = `Box Office: <${formatCurrencyShort(maxRevenue)}\ntajemniczy film ma mniejszy przychód niż ${formatCurrencyShort(maxRevenue)}`;
-        }
-        return {
-            type: 'revenue',
-            items: [{
-                    type: 'inner',
-                    color,
-                    icon: '💵',
-                    value,
-                    arrow,
-                    tooltip
-                }]
-        };
     }
 }
 //# sourceMappingURL=RevenueHint.js.map

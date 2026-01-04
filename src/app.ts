@@ -2,12 +2,18 @@ import {
     Movie,
     MovieSearchResult,
     MovieSearchResponse,
-    MovieResponseWrapper,
+    RawMovieResponse,
+    RawMovieResponseWrapper,
     MovieComparison,
     TooltipState,
-    ComparisonResult,
-    YearDirection,
-    BudgetDirection
+    YearComparison,
+    BudgetComparison,
+    RevenueComparison,
+    GenresComparison,
+    CompaniesComparison,
+    CountriesComparison,
+    CastComparison,
+    DirectorComparison
 } from './types';
 import { GuessCard } from './components/GuessCard.js';
 import { MysteryInfo } from './components/MysteryInfo.js';
@@ -27,13 +33,18 @@ let tooltipState: TooltipState = {
     hideTimeout: null
 };
 
-// Transform API response to Movie format with computed fields
-function transformMovieResponse(movie: Movie): Movie {
-    // Sort cast by order
-    const sortedCast = [...movie.cast].sort((a, b) => a.order - b.order);
+// Transform raw API response to Movie format
+function transformMovieResponse(rawMovie: RawMovieResponse): Movie {
+    // Sort cast by order and convert to CastMember
+    const sortedCast = [...rawMovie.cast]
+        .sort((a, b) => a.order - b.order)
+        .map(member => ({
+            name: member.name,
+            profile_path: member.profile_path
+        }));
 
     // Extract director from crew
-    const directorMember = movie.crew.find(
+    const directorMember = rawMovie.crew.find(
         member => member.job === 'Director' && member.department === 'Directing'
     );
     const director = directorMember ? {
@@ -42,8 +53,17 @@ function transformMovieResponse(movie: Movie): Movie {
     } : null;
 
     return {
-        ...movie,
-        cast: sortedCast,
+        id: rawMovie.id,
+        title: rawMovie.title,
+        original_title: rawMovie.original_title,
+        release_date: rawMovie.release_date,
+        poster_path: rawMovie.poster_path,
+        genres: rawMovie.genres || [],
+        budget: rawMovie.budget || 0,
+        revenue: rawMovie.revenue || 0,
+        production_companies: rawMovie.production_companies || [],
+        production_countries: rawMovie.production_countries || [],
+        top_cast: sortedCast,
         director: director
     };
 }
@@ -128,11 +148,11 @@ async function startNewGame(): Promise<void> {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const rawData: MovieResponseWrapper | { movie: Movie } = await response.json();
+        const rawData: RawMovieResponseWrapper | { movie: RawMovieResponse } = await response.json();
         
         // Handle format with or without date wrapper
-        const movie = 'date' in rawData ? rawData.movie : rawData.movie;
-        mysteryMovie = transformMovieResponse(movie);
+        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
+        mysteryMovie = transformMovieResponse(rawMovie);
         
         console.log(mysteryMovie);
     } catch (error) {
@@ -278,11 +298,11 @@ async function selectMovie(movieId: number): Promise<void> {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const rawData: MovieResponseWrapper | { movie: Movie } = await response.json();
+        const rawData: RawMovieResponseWrapper | { movie: RawMovieResponse } = await response.json();
         
         // Handle format with or without date wrapper
-        const movie = 'date' in rawData ? rawData.movie : rawData.movie;
-        guessedMovieDetails = transformMovieResponse(movie);
+        const rawMovie = 'date' in rawData ? rawData.movie : rawData.movie;
+        guessedMovieDetails = transformMovieResponse(rawMovie);
     } catch (error) {
         console.error('Error fetching movie details:', error);
         alert('Błąd: Nie udało się załadować szczegółów filmu.');
@@ -316,192 +336,141 @@ async function selectMovie(movieId: number): Promise<void> {
     movieSearch.value = '';
 }
 
-// Compare two movies
+// Compare two movies - returns simplified comparison data
 function compareMovies(guessed: Movie, mystery: Movie): MovieComparison {
     const guessedYear = guessed.release_date ? new Date(guessed.release_date).getFullYear() : 0;
     const mysteryYear = mystery.release_date ? new Date(mystery.release_date).getFullYear() : 0;
     
-    let yearResult: YearDirection = 'unknown';
-    let yearDiff = 0;
+    // Year comparison - calculate arrow based on difference
+    let yearArrow = '?';
     if (guessedYear !== 0 && mysteryYear !== 0) {
-        yearDiff = guessedYear - mysteryYear; // Positive if guessed is newer
+        const yearDiff = guessedYear - mysteryYear;
         if (yearDiff === 0) {
-            yearResult = 'match';
+            yearArrow = '=';
         } else if (yearDiff > 5) {
-            yearResult = 'much_newer';
+            yearArrow = '↓↓';
         } else if (yearDiff > 0) {
-            yearResult = 'newer';
+            yearArrow = '↓';
         } else if (yearDiff < -5) {
-            yearResult = 'much_older';
+            yearArrow = '↑↑';
         } else {
-            yearResult = 'older';
+            yearArrow = '↑';
         }
     }
-    
-    const guessedGenres = guessed.genres.map(genre => genre.id) || [];
-    const mysteryGenres = mystery.genres.map(genre => genre.id) || [];
-    
-    const commonGenres = guessedGenres.filter(g => mysteryGenres.includes(g));
-    
-    const guessedBudget = guessed.budget || 0;
-    const mysteryBudget = mystery.budget || 0;
-    let budgetResult: BudgetDirection = 'unknown';
-    let budgetRatio = 0;
-    if (guessedBudget > 0 && mysteryBudget > 0) {
-        const budgetDiff = guessedBudget - mysteryBudget; // Positive if guessed is higher
-        budgetRatio = Math.abs(budgetDiff) / Math.max(guessedBudget, mysteryBudget);
-        if (budgetDiff === 0) {
-            budgetResult = 'match';
-        } else if (budgetRatio <= 0.3) { // Within 30% - close
-            budgetResult = budgetDiff > 0 ? 'higher' : 'lower';
-        } else {
-            budgetResult = budgetDiff > 0 ? 'much_higher' : 'much_lower';
-        }
-    } else if (guessedBudget === 0 && mysteryBudget === 0) {
-        budgetResult = 'match';
-        budgetRatio = 0;
-    }
-    
-    const guessedRevenue = guessed.revenue || 0;
-    const mysteryRevenue = mystery.revenue || 0;
-    let revenueResult: BudgetDirection = 'unknown';
-    let revenueRatio = 0;
-    if (guessedRevenue > 0 && mysteryRevenue > 0) {
-        const revenueDiff = guessedRevenue - mysteryRevenue; // Positive if guessed is higher
-        revenueRatio = Math.abs(revenueDiff) / Math.max(guessedRevenue, mysteryRevenue);
-        if (revenueDiff === 0) {
-            revenueResult = 'match';
-        } else if (revenueRatio <= 0.3) { // Within 30% - close
-            revenueResult = revenueDiff > 0 ? 'higher' : 'lower';
-        } else {
-            revenueResult = revenueDiff > 0 ? 'much_higher' : 'much_lower';
-        }
-    } else if (guessedRevenue === 0 && mysteryRevenue === 0) {
-        revenueResult = 'match';
-        revenueRatio = 0;
-    }
-    
-    const guessedCompanies = (guessed.production_companies || []).map(c => c.name);
-    const mysteryCompanies = (mystery.production_companies || []).map(c => c.name);
-    const commonCompanies = guessedCompanies.filter(c => mysteryCompanies.includes(c));
-    
-    const guessedCountries = (guessed.production_countries || []).map(c => c.name);
-    const mysteryCountries = (mystery.production_countries || []).map(c => c.name);
-    const commonCountries = guessedCountries.filter(c => mysteryCountries.includes(c));
-    
-    // For cast, use all actors and preserve order
-    const guessedCastFull = (guessed.cast || []).map((a, index) => ({
-        name: a.name,
-        isMatch: false,
-        originalOrder: index
-    }));
-    const mysteryCastNames = (mystery.cast || []).map(a => a.name);
-    const guessedCastWithMatches = guessedCastFull.map(actor => ({
-        ...actor,
-        isMatch: mysteryCastNames.includes(actor.name)
-    }));
-    // Sort: matches first, then non-matches, preserving original order within each group
-    const sortedGuessedCast = [...guessedCastWithMatches].sort((a, b) => {
-        if (a.isMatch && !b.isMatch) return -1;
-        if (!a.isMatch && b.isMatch) return 1;
-        return a.originalOrder - b.originalOrder;
-    });
-    const guessedCast = sortedGuessedCast.map(a => a.name);
-    const commonCast = guessedCastWithMatches.filter(a => a.isMatch).map(a => a.name);
-    
-    const guessedDirector = guessed.director?.name || null;
-    const mysteryDirector = mystery.director?.name || null;
-    
-    const comparison: MovieComparison = {
-        year: {
-            guessed: guessedYear || 'Nieznany',
-            mystery: mysteryYear || 'Nieznany',
-            result: yearResult,
-            yearDiff: yearDiff
-        },
-        genres: {
-            guessed: guessedGenres,
-            mystery: mysteryGenres,
-            matches: commonGenres,
-            hasMatch: commonGenres.length > 0
-        },
-        budget: {
-            guessed: guessedBudget,
-            mystery: mysteryBudget,
-            result: budgetResult,
-            ratio: budgetRatio
-        },
-        revenue: {
-            guessed: guessedRevenue,
-            mystery: mysteryRevenue,
-            result: revenueResult,
-            ratio: revenueRatio
-        },
-        companies: {
-            guessed: guessedCompanies,
-            mystery: mysteryCompanies,
-            matches: commonCompanies,
-            hasMatch: commonCompanies.length > 0
-        },
-        countries: {
-            guessed: guessedCountries,
-            mystery: mysteryCountries,
-            matches: commonCountries,
-            hasMatch: commonCountries.length > 0
-        },
-        cast: {
-            guessed: guessedCast,
-            mystery: mysteryCastNames,
-            matches: commonCast,
-            hasMatch: commonCast.length > 0,
-            guessedWithOrder: sortedGuessedCast
-        },
-        director: {
-            guessed: guessedDirector ? [guessedDirector] : [],
-            mystery: mysteryDirector ? [mysteryDirector] : [],
-            matches: guessedDirector && mysteryDirector && guessedDirector === mysteryDirector ? [guessedDirector] : [],
-            hasMatch: guessedDirector !== null && mysteryDirector !== null && guessedDirector === mysteryDirector
-        }
+    const yearComparison: YearComparison = {
+        value: guessedYear || undefined,
+        arrow: yearArrow
     };
     
-    return comparison;
+    // Genres comparison - items with isMatch
+    const mysteryGenreNames = new Set(mystery.genres.map(g => g.name));
+    const genresComparison: GenresComparison = {
+        items: guessed.genres.map(genre => ({
+            name: genre.name,
+            isMatch: mysteryGenreNames.has(genre.name)
+        }))
+    };
+    
+    // Budget comparison - calculate arrow based on difference
+    const guessedBudget = guessed.budget || 0;
+    const mysteryBudget = mystery.budget || 0;
+    let budgetArrow = '?';
+    if (guessedBudget > 0 && mysteryBudget > 0) {
+        const budgetDiff = guessedBudget - mysteryBudget;
+        const budgetRatio = Math.abs(budgetDiff) / Math.max(guessedBudget, mysteryBudget);
+        if (budgetDiff === 0) {
+            budgetArrow = '=';
+        } else if (budgetRatio > 0.3) {
+            budgetArrow = budgetDiff > 0 ? '↓↓' : '↑↑';
+        } else {
+            budgetArrow = budgetDiff > 0 ? '↓' : '↑';
+        }
+    } else if (guessedBudget === 0 && mysteryBudget === 0) {
+        budgetArrow = '=';
+    }
+    const budgetComparison: BudgetComparison = {
+        value: guessedBudget || undefined,
+        arrow: budgetArrow
+    };
+    
+    // Revenue comparison - calculate arrow based on difference
+    const guessedRevenue = guessed.revenue || 0;
+    const mysteryRevenue = mystery.revenue || 0;
+    let revenueArrow = '?';
+    if (guessedRevenue > 0 && mysteryRevenue > 0) {
+        const revenueDiff = guessedRevenue - mysteryRevenue;
+        const revenueRatio = Math.abs(revenueDiff) / Math.max(guessedRevenue, mysteryRevenue);
+        if (revenueDiff === 0) {
+            revenueArrow = '=';
+        } else if (revenueRatio > 0.3) {
+            revenueArrow = revenueDiff > 0 ? '↓↓' : '↑↑';
+        } else {
+            revenueArrow = revenueDiff > 0 ? '↓' : '↑';
+        }
+    } else if (guessedRevenue === 0 && mysteryRevenue === 0) {
+        revenueArrow = '=';
+    }
+    const revenueComparison: RevenueComparison = {
+        value: guessedRevenue || undefined,
+        arrow: revenueArrow
+    };
+    
+    // Companies comparison - items with isMatch
+    const mysteryCompanyNames = new Set(mystery.production_companies.map(c => c.name));
+    const companiesComparison: CompaniesComparison = {
+        items: guessed.production_companies.map(company => ({
+            name: company.name,
+            logo_path: company.logo_path,
+            isMatch: mysteryCompanyNames.has(company.name)
+        }))
+    };
+    
+    // Countries comparison - items with isMatch
+    const mysteryCountryNames = new Set(mystery.production_countries.map(c => c.name));
+    const countriesComparison: CountriesComparison = {
+        items: guessed.production_countries.map(country => ({
+            name: country.name,
+            iso_3166_1: country.iso_3166_1,
+            isMatch: mysteryCountryNames.has(country.name)
+        }))
+    };
+    
+    // Cast comparison - items with isMatch, already sorted by matches first (from top_cast order)
+    const mysteryCastNames = new Set(mystery.top_cast.map(a => a.name));
+    const castItems = guessed.top_cast.map(actor => ({
+        name: actor.name,
+        profile_path: actor.profile_path,
+        isMatch: mysteryCastNames.has(actor.name)
+    }));
+    // Sort: matches first, then non-matches, limit to 3
+    const sortedCast = [...castItems].sort((a, b) => {
+        if (a.isMatch && !b.isMatch) return -1;
+        if (!a.isMatch && b.isMatch) return 1;
+        return 0;
+    }).slice(0, 3);
+    const castComparison: CastComparison = {
+        items: sortedCast
+    };
+    
+    // Director comparison - just isMatch
+    const directorComparison: DirectorComparison = {
+        isMatch: guessed.director !== null && 
+                 mystery.director !== null && 
+                 guessed.director?.name === mystery.director?.name
+    };
+    
+    return {
+        year: yearComparison,
+        genres: genresComparison,
+        budget: budgetComparison,
+        revenue: revenueComparison,
+        companies: companiesComparison,
+        countries: countriesComparison,
+        cast: castComparison,
+        director: directorComparison
+    };
 }
 
-// Genre icons mapping (using genre IDs from TMDB API)
-const genreIcons: Record<number, string> = {
-    28: '💥',   // Action
-    12: '🗺️',   // Adventure
-    16: '🎨',   // Animation
-    99: '📹',   // Documentary
-    18: '🎭',   // Drama
-    10751: '👨‍👩‍👧‍👦', // Family
-    14: '🧙',   // Fantasy
-    36: '📜',   // History
-    27: '👻',   // Horror
-    10402: '🎵', // Music
-    9648: '🔍',  // Mystery
-    10749: '💕', // Romance
-    878: '🚀',  // Science Fiction
-    10770: '📺', // TV Movie
-    53: '🔪',   // Thriller
-    10752: '⚔️', // War
-    37: '🤠',   // Western
-    35: '😂',   // Comedy
-    80: '🔫',   // Crime
-    10769: '🌍', // Foreign
-    10759: '🎬', // Action & Adventure (TV)
-    10762: '👶', // Kids (TV)
-    10763: '📡', // News (TV)
-    10764: '📺', // Reality (TV)
-    10765: '🚀', // Sci-Fi & Fantasy (TV)
-    10766: '📺', // Soap (TV)
-    10767: '💬', // Talk (TV)
-    10768: '⚔️', // War & Politics (TV)
-};
-
-function getGenreIcon(genreId: number): string {
-    return genreIcons[genreId] || '🎬';
-}
 
 function getCountryFlagUrl(countryCode: string | null | undefined): string {
     if (!countryCode) return '';

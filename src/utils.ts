@@ -11,30 +11,46 @@ export function formatCurrencyShort(amount: number): string {
     return `${amount} $`;
 }
 
-const genreIcons: { [key: number]: string } = {
-    28: '💥',   // Akcja
-    12: '🌍',   // Przygoda
-    16: '🎨',   // Animacja
-    35: '😂',   // Komedia
-    80: '🔫',   // Kryminał
-    99: '📺',   // Dokument
-    18: '😢',   // Dramat
-    10751: '👨‍👩‍👧', // Familijny
-    14: '🧙',   // Fantasy
-    36: '📜',   // Historia
-    27: '👻',   // Horror
-    10402: '🎵', // Muzyczny
-    9648: '🔍',  // Tajemnica
-    10749: '💕', // Romans
-    878: '🚀',  // Sci-Fi
-    10770: '📺', // TV Movie
-    53: '😱',   // Thriller
-    10752: '⚔️', // Wojenny
-    37: '🤠'    // Western
+const genreIcons: { [key: string]: string } = {
+    // Polish names
+    'Akcja': '💥',
+    'Przygoda': '🌍',
+    'Animacja': '🎨',
+    'Komedia': '😂',
+    'Kryminał': '🔫',
+    'Dokument': '📺',
+    'Dramat': '😢',
+    'Familijny': '👨‍👩‍👧',
+    'Fantasy': '🧙',
+    'Historia': '📜',
+    'Horror': '👻',
+    'Muzyczny': '🎵',
+    'Tajemnica': '🔍',
+    'Romans': '💕',
+    'Sci-Fi': '🚀',
+    'Thriller': '😱',
+    'Wojenny': '⚔️',
+    'Western': '🤠',
+    // English names
+    'Action': '💥',
+    'Adventure': '🌍',
+    'Animation': '🎨',
+    'Comedy': '😂',
+    'Crime': '🔫',
+    'Documentary': '📺',
+    'Drama': '😢',
+    'Family': '👨‍👩‍👧',
+    'History': '📜',
+    'Music': '🎵',
+    'Mystery': '🔍',
+    'Romance': '💕',
+    'Science Fiction': '🚀',
+    'TV Movie': '📺',
+    'War': '⚔️'
 };
 
-export function getGenreIcon(genreId: number): string {
-    return genreIcons[genreId] || '🎬';
+export function getGenreIcon(genreName: string): string {
+    return genreIcons[genreName] || '🎬';
 }
 
 export function getCountryFlagUrl(countryCode: string | null | undefined): string {

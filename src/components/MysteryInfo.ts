@@ -1,5 +1,6 @@
 import { HintGroup, HintGroupConfig } from './HintGroup.js';
-import { Movie, MovieComparison } from '../types.js';
+import { HintItemConfig } from './HintItem.js';
+import { Movie, MovieComparison, Genre, ProductionCompany, ProductionCountry, CastMember, Director } from '../types.js';
 import { YearHint } from './hints/YearHint.js';
 import { BudgetHint } from './hints/BudgetHint.js';
 import { RevenueHint } from './hints/RevenueHint.js';
@@ -60,96 +61,97 @@ export class MysteryInfo {
         if (allGuesses.length === 0) {
             // Empty state
             return [
-                YearHint.createForMystery({ year: '?', minYear: null, maxYear: null }),
-                GenreHint.createForMystery({ genres: [], matchedGenreIds: [] }),
-                BudgetHint.createForMystery({ budget: 0, minBudget: null, maxBudget: null }),
-                RevenueHint.createForMystery({ revenue: 0, minRevenue: null, maxRevenue: null }),
-                CompanyHint.createForMystery({ companies: [], matchedCompanyNames: [] }),
-                CountryHint.createForMystery({ countries: [], matchedCountryNames: [] }),
-                DirectorHint.createForMystery({ director: null, matchedDirectorName: null }),
-                ActorHint.createForMystery({ cast: [], matchedActorNames: [] })
+                { type: 'year', items: [YearHint.create({ comparison: { min: null, max: null } })] },
+                { type: 'genres', items: [] },
+                { type: 'budget', items: [BudgetHint.create({ comparison: { min: null, max: null } })] },
+                { type: 'revenue', items: [RevenueHint.create({ comparison: { min: null, max: null } })] },
+                { type: 'companies', items: [] },
+                { type: 'countries', items: [] },
+                { type: 'director', items: [] },
+                { type: 'cast', items: [] }
             ];
         }
 
-        // Calculate year range
+        // Calculate year range based on arrows
         let minYear: number | null = null;
         let maxYear: number | null = null;
         for (const guess of allGuesses) {
-            const year = guess.movie.release_date ? new Date(guess.movie.release_date).getFullYear() : null;
+            const year = guess.comparison.year.value;
             if (!year) continue;
             
-            const result = guess.comparison.year.result;
-            if (result === 'match') {
+            const arrow = guess.comparison.year.arrow;
+            if (arrow === '=') {
                 minYear = year;
                 maxYear = year;
                 break;
-            } else if (result === 'newer' || result === 'much_newer') {
+            } else if (arrow === '↓' || arrow === '↓↓') {
+                // Guessed is newer, so mystery is older (maxYear)
                 if (maxYear === null || year < maxYear) {
                     maxYear = year;
                 }
-            } else if (result === 'older' || result === 'much_older') {
+            } else if (arrow === '↑' || arrow === '↑↑') {
+                // Guessed is older, so mystery is newer (minYear)
                 if (minYear === null || year > minYear) {
                     minYear = year;
                 }
             }
         }
 
-        // Collect all genres from guesses for genre name lookup
-        const allGenres = new Map<number, string>();
+        // Collect matched genres
+        const matchedGenresMap = new Map<string, Genre>();
         for (const guess of allGuesses) {
-            guess.movie.genres.forEach(genre => {
-                if (!allGenres.has(genre.id)) {
-                    allGenres.set(genre.id, genre.name);
+            guess.comparison.genres.items.forEach(item => {
+                if (item.isMatch && !matchedGenresMap.has(item.name)) {
+                    matchedGenresMap.set(item.name, { name: item.name });
                 }
             });
         }
+        const matchedGenres = Array.from(matchedGenresMap.values());
 
-        // Collect matched genres
-        const matchedGenres = new Set<number>();
-        for (const guess of allGuesses) {
-            guess.comparison.genres.matches.forEach(id => matchedGenres.add(id));
-        }
-
-        // Calculate budget range
+        // Calculate budget range based on arrows
         let minBudget: number | null = null;
         let maxBudget: number | null = null;
         for (const guess of allGuesses) {
-            const budget = guess.movie.budget || 0;
-            if (budget === 0) continue;
+            const budget = guess.comparison.budget.value;
+            if (!budget || budget === 0) continue;
             
-            const result = guess.comparison.budget.result;
-            if (result === 'match') {
+            const arrow = guess.comparison.budget.arrow;
+            if (arrow === '=') {
                 minBudget = budget;
                 maxBudget = budget;
                 break;
-            } else if (result === 'higher' || result === 'much_higher') {
+            } else if (arrow === '↓' || arrow === '↓↓') {
+                // Guessed is higher, so mystery is lower (maxBudget)
                 if (maxBudget === null || budget < maxBudget) {
                     maxBudget = budget;
                 }
-            } else if (result === 'lower' || result === 'much_lower') {
+            } else if (arrow === '↑' || arrow === '↑↑') {
+                // Guessed is lower, so mystery is higher (minBudget)
                 if (minBudget === null || budget > minBudget) {
                     minBudget = budget;
                 }
             }
         }
 
-        // Calculate revenue range
+        // Calculate revenue range based on arrows
         let minRevenue: number | null = null;
         let maxRevenue: number | null = null;
         for (const guess of allGuesses) {
-            const revenue = guess.movie.revenue || 0;
-            if (revenue === 0) continue;
+            const revenue = guess.comparison.revenue.value;
+            if (!revenue || revenue === 0) continue;
             
-            const result = guess.comparison.revenue.result;
-            if (result === 'match') {
+            const arrow = guess.comparison.revenue.arrow;
+            if (arrow === '=') {
                 minRevenue = revenue;
                 maxRevenue = revenue;
                 break;
-            } else if (result === 'higher' || result === 'much_higher') {
+            } else if (arrow === '↓' || arrow === '↓↓') {
+                // Guessed is higher, so mystery is lower (maxRevenue)
                 if (maxRevenue === null || revenue < maxRevenue) {
                     maxRevenue = revenue;
                 }
-            } else if (result === 'lower' || result === 'much_lower') {
+            } else if (arrow === '↑' || arrow === '↑↑') {
+                // Guessed is lower, so mystery is higher (minRevenue)
                 if (minRevenue === null || revenue > minRevenue) {
                     minRevenue = revenue;
                 }
@@ -157,106 +159,113 @@ export class MysteryInfo {
         }
 
         // Collect matched companies
-        const matchedCompanies = new Set<string>();
+        const matchedCompaniesMap = new Map<string, ProductionCompany>();
         for (const guess of allGuesses) {
-            guess.comparison.companies.matches.forEach(name => matchedCompanies.add(name));
-        }
-
-        // Collect all companies from guesses for logo lookup
-        const allCompanies: Array<{ name: string; logo_path: string | null }> = [];
-        for (const guess of allGuesses) {
-            guess.movie.production_companies.forEach(company => {
-                if (!allCompanies.find(c => c.name === company.name)) {
-                    allCompanies.push(company);
+            guess.comparison.companies.items.forEach(item => {
+                if (item.isMatch && !matchedCompaniesMap.has(item.name)) {
+                    matchedCompaniesMap.set(item.name, { name: item.name, logo_path: item.logo_path });
                 }
             });
         }
+        const matchedCompanies = Array.from(matchedCompaniesMap.values());
 
         // Collect matched countries
-        const matchedCountries = new Set<string>();
+        const matchedCountriesMap = new Map<string, ProductionCountry>();
         for (const guess of allGuesses) {
-            guess.comparison.countries.matches.forEach(name => matchedCountries.add(name));
-        }
-
-        // Collect all countries from guesses for flag lookup
-        const allCountries: Array<{ name: string; iso_3166_1: string }> = [];
-        for (const guess of allGuesses) {
-            guess.movie.production_countries.forEach(country => {
-                if (!allCountries.find(c => c.name === country.name)) {
-                    allCountries.push(country);
+            guess.comparison.countries.items.forEach(item => {
+                if (item.isMatch && !matchedCountriesMap.has(item.name)) {
+                    matchedCountriesMap.set(item.name, { name: item.name, iso_3166_1: item.iso_3166_1 });
                 }
             });
         }
+        const matchedCountries = Array.from(matchedCountriesMap.values());
 
         // Collect matched cast
-        const matchedCast = new Set<string>();
+        const matchedCastMap = new Map<string, CastMember>();
         for (const guess of allGuesses) {
-            guess.comparison.cast.matches.forEach(name => matchedCast.add(name));
+            guess.comparison.cast.items.forEach(item => {
+                if (item.isMatch && !matchedCastMap.has(item.name)) {
+                    matchedCastMap.set(item.name, { name: item.name, profile_path: item.profile_path });
+                }
+            });
         }
+        const matchedCast = Array.from(matchedCastMap.values());
 
         // Check for matched director
-        let matchedDirectorName: string | null = null;
-        let matchedDirectorProfilePath: string | null = null;
+        let matchedDirector: Director | null = null;
         for (const guess of allGuesses) {
-            if (guess.comparison.director.hasMatch && guess.movie.director) {
-                matchedDirectorName = guess.movie.director.name;
-                matchedDirectorProfilePath = guess.movie.director.profile_path;
+            if (guess.comparison.director.isMatch && guess.movie.director) {
+                matchedDirector = guess.movie.director;
                 break;
             }
         }
 
-        // Year
-        groups.push(YearHint.createForMystery({
-            year: '?',
-            minYear,
-            maxYear
-        }));
+        // Year - single item
+        groups.push({
+            type: 'year',
+            items: [YearHint.create({ comparison: { min: minYear, max: maxYear } })]
+        });
 
-        // Genres
-        groups.push(GenreHint.createForMystery({
-            genres: Array.from(allGenres.entries()).map(([id, name]) => ({ id, name })),
-            matchedGenreIds: Array.from(matchedGenres)
-        }));
+        // Genres - multiple items
+        const genreItems = matchedGenres.map(genre => 
+            GenreHint.create({ genre, isMatch: true })
+        );
+        groups.push({
+            type: 'genres',
+            items: genreItems
+        });
 
-        // Budget
-        groups.push(BudgetHint.createForMystery({
-            budget: 0,
-            minBudget,
-            maxBudget
-        }));
+        // Budget - single item
+        groups.push({
+            type: 'budget',
+            items: [BudgetHint.create({ comparison: { min: minBudget, max: maxBudget } })]
+        });
 
-        // Revenue
-        groups.push(RevenueHint.createForMystery({
-            revenue: 0,
-            minRevenue,
-            maxRevenue
-        }));
+        // Revenue - single item
+        groups.push({
+            type: 'revenue',
+            items: [RevenueHint.create({ comparison: { min: minRevenue, max: maxRevenue } })]
+        });
 
-        // Companies
-        groups.push(CompanyHint.createForMystery({
-            companies: allCompanies,
-            matchedCompanyNames: Array.from(matchedCompanies)
-        }));
+        // Companies - multiple items
+        const companyItems = matchedCompanies.map(company => 
+            CompanyHint.create({ company, isMatch: true })
+        );
+        groups.push({
+            type: 'companies',
+            items: companyItems
+        });
 
-        // Countries
-        groups.push(CountryHint.createForMystery({
-            countries: allCountries,
-            matchedCountryNames: Array.from(matchedCountries)
-        }));
+        // Countries - multiple items
+        const countryItems = matchedCountries.map(country => 
+            CountryHint.create({ country, isMatch: true })
+        );
+        groups.push({
+            type: 'countries',
+            items: countryItems
+        });
 
-        // Director
-        groups.push(DirectorHint.createForMystery({
-            director: null,
-            matchedDirectorName,
-            matchedDirectorProfilePath
-        }));
+        // Director - single item (if exists)
+        if (matchedDirector) {
+            groups.push({
+                type: 'director',
+                items: [DirectorHint.create({ director: matchedDirector, isMatch: true })]
+            });
+        } else {
+            groups.push({
+                type: 'director',
+                items: []
+            });
+        }
 
-        // Cast
-        groups.push(ActorHint.createForMystery({
-            cast: [],
-            matchedActorNames: Array.from(matchedCast),
-            allGuesses: allGuesses.map(guess => ({ movie: { cast: guess.movie.cast } }))
-        }));
+        // Cast - multiple items
+        const castItems = matchedCast.map(actor => 
+            ActorHint.create({ actor, isMatch: true })
+        );
+        groups.push({
+            type: 'cast',
+            items: castItems
+        });
 
         return groups;
     }

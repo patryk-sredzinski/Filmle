@@ -56,47 +56,78 @@ export class GuessCard {
         const movie = this.config.movie;
         const comparison = this.config.comparison;
         const groups = [];
-        // Year
-        const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
-        groups.push(YearHint.createForGuess({
-            year,
-            comparison: comparison.year
-        }));
-        // Genres
-        groups.push(GenreHint.createForGuess({
-            genres: movie.genres,
-            comparison: comparison.genres
-        }));
-        // Budget
-        groups.push(BudgetHint.createForGuess({
-            budget: movie.budget || 0,
-            comparison: comparison.budget
-        }));
-        // Revenue
-        groups.push(RevenueHint.createForGuess({
-            revenue: movie.revenue || 0,
-            comparison: comparison.revenue
-        }));
-        // Companies
-        groups.push(CompanyHint.createForGuess({
-            companies: movie.production_companies,
-            comparison: comparison.companies
-        }));
-        // Countries
-        groups.push(CountryHint.createForGuess({
-            countries: movie.production_countries,
-            comparison: comparison.countries
-        }));
-        // Director
-        groups.push(DirectorHint.createForGuess({
-            director: movie.director,
-            comparison: comparison.director
-        }));
-        // Cast
-        groups.push(ActorHint.createForGuess({
-            cast: movie.cast,
-            comparison: comparison.cast
-        }));
+        // Year - single item
+        groups.push({
+            type: 'year',
+            items: [YearHint.create({ comparison: comparison.year })]
+        });
+        // Genres - multiple items
+        const genreItems = comparison.genres.items.map(item => {
+            const genre = movie.genres.find(g => g.name === item.name);
+            if (!genre)
+                return null;
+            return GenreHint.create({ genre, isMatch: item.isMatch });
+        }).filter((item) => item !== null);
+        groups.push({
+            type: 'genres',
+            items: genreItems
+        });
+        // Budget - single item
+        groups.push({
+            type: 'budget',
+            items: [BudgetHint.create({ comparison: comparison.budget })]
+        });
+        // Revenue - single item
+        groups.push({
+            type: 'revenue',
+            items: [RevenueHint.create({ comparison: comparison.revenue })]
+        });
+        // Companies - multiple items
+        const companyItems = comparison.companies.items.map(item => {
+            const company = movie.production_companies.find(c => c.name === item.name);
+            if (!company)
+                return null;
+            return CompanyHint.create({ company, isMatch: item.isMatch });
+        }).filter((item) => item !== null);
+        groups.push({
+            type: 'companies',
+            items: companyItems
+        });
+        // Countries - multiple items
+        const countryItems = comparison.countries.items.map(item => {
+            const country = movie.production_countries.find(c => c.name === item.name);
+            if (!country)
+                return null;
+            return CountryHint.create({ country, isMatch: item.isMatch });
+        }).filter((item) => item !== null);
+        groups.push({
+            type: 'countries',
+            items: countryItems
+        });
+        // Director - single item (if exists)
+        if (movie.director) {
+            groups.push({
+                type: 'director',
+                items: [DirectorHint.create({ director: movie.director, isMatch: comparison.director.isMatch })]
+            });
+        }
+        else {
+            groups.push({
+                type: 'director',
+                items: []
+            });
+        }
+        // Cast - multiple items
+        const castItems = comparison.cast.items.map(item => {
+            return ActorHint.create({
+                actor: { name: item.name, profile_path: item.profile_path },
+                isMatch: item.isMatch
+            });
+        });
+        groups.push({
+            type: 'cast',
+            items: castItems
+        });
         return groups;
     }
     getElement() {

@@ -1,7 +1,6 @@
 // Type definitions for Filmole
 
 export interface Genre {
-    id: number;
     name: string;
 }
 
@@ -18,15 +17,6 @@ export interface ProductionCountry {
 export interface CastMember {
     name: string;
     profile_path: string | null;
-    order: number;
-    character?: string;
-}
-
-export interface CrewMember {
-    name: string;
-    profile_path: string | null;
-    job: string;
-    department: string;
 }
 
 export interface Director {
@@ -45,9 +35,7 @@ export interface Movie {
     revenue: number;
     production_companies: ProductionCompany[];
     production_countries: ProductionCountry[];
-    cast: CastMember[];
-    crew: CrewMember[];
-    // Computed field (derived from crew)
+    top_cast: CastMember[];
     director: Director | null;
 }
 
@@ -62,74 +50,89 @@ export interface MovieSearchResponse {
     results: MovieSearchResult[];
 }
 
-// API response wrapper (with optional date field)
-export interface MovieResponseWrapper {
+// Raw API response types
+export interface RawCastMember {
+    name: string;
+    profile_path: string | null;
+    order: number;
+    character?: string;
+}
+
+export interface RawCrewMember {
+    name: string;
+    profile_path: string | null;
+    job: string;
+    department: string;
+}
+
+export interface RawMovieResponse {
+    id: number;
+    title: string;
+    original_title?: string;
+    release_date: string | null;
+    poster_path: string | null;
+    genres: Genre[];
+    budget: number;
+    revenue: number;
+    production_companies: ProductionCompany[];
+    production_countries: ProductionCountry[];
+    cast: RawCastMember[];
+    crew: RawCrewMember[];
+}
+
+// Raw API response wrapper (with optional date field)
+export interface RawMovieResponseWrapper {
     date?: string;
-    movie: Movie;
+    movie: RawMovieResponse;
 }
 
-export type ComparisonResult = 'match' | 'close' | 'far' | 'unknown';
+// Simplified comparison models - only data needed for rendering
 
-export type YearDirection = 'much_newer' | 'newer' | 'match' | 'older' | 'much_older' | 'unknown';
-
+// For guess mode: value is the guessed value, arrow indicates direction
+// For mystery mode: min/max define the range, isClose indicates if it's a close match
 export interface YearComparison {
-    guessed: number | string;
-    mystery: number | string;
-    result: YearDirection;
-    yearDiff: number;
+    value?: number; // For guess mode
+    arrow?: string; // For guess mode: '=', '↑', '↓', '↑↑', '↓↓', '?'
+    min?: number | null; // For mystery mode
+    max?: number | null; // For mystery mode
+    isClose?: boolean; // For mystery mode
 }
-
-export type BudgetDirection = 'much_higher' | 'higher' | 'match' | 'lower' | 'much_lower' | 'unknown';
 
 export interface BudgetComparison {
-    guessed: number;
-    mystery: number;
-    result: BudgetDirection;
-    ratio: number;
+    value?: number; // For guess mode
+    arrow?: string; // For guess mode: '=', '↑', '↓', '↑↑', '↓↓', '?'
+    min?: number | null; // For mystery mode
+    max?: number | null; // For mystery mode
+    isClose?: boolean; // For mystery mode
 }
 
 export interface RevenueComparison {
-    guessed: number;
-    mystery: number;
-    result: BudgetDirection;
-    ratio: number;
+    value?: number; // For guess mode
+    arrow?: string; // For guess mode: '=', '↑', '↓', '↑↑', '↓↓', '?'
+    min?: number | null; // For mystery mode
+    max?: number | null; // For mystery mode
+    isClose?: boolean; // For mystery mode
 }
 
+// Simple match comparison - just isMatch for each item
 export interface GenresComparison {
-    guessed: number[];
-    mystery: number[];
-    matches: number[];
-    hasMatch: boolean;
+    items: Array<{ name: string; isMatch: boolean }>;
 }
-
 
 export interface CompaniesComparison {
-    guessed: string[];
-    mystery: string[];
-    matches: string[];
-    hasMatch: boolean;
+    items: Array<{ name: string; logo_path: string | null; isMatch: boolean }>;
 }
 
 export interface CountriesComparison {
-    guessed: string[];
-    mystery: string[];
-    matches: string[];
-    hasMatch: boolean;
+    items: Array<{ name: string; iso_3166_1: string; isMatch: boolean }>;
 }
 
 export interface CastComparison {
-    guessed: string[];
-    mystery: string[];
-    matches: string[];
-    hasMatch: boolean;
-    guessedWithOrder: Array<{ name: string; isMatch: boolean; originalOrder: number }>;
+    items: Array<{ name: string; profile_path: string | null; isMatch: boolean }>;
 }
 
 export interface DirectorComparison {
-    guessed: string[];
-    mystery: string[];
-    matches: string[];
-    hasMatch: boolean;
+    isMatch: boolean;
 }
 
 export interface MovieComparison {
