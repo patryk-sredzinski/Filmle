@@ -15,6 +15,7 @@ import {
 let mysteryMovie: Movie | null = null;
 let attempts: number = 0;
 let gameWon: boolean = false;
+let allGuesses: Array<{ movie: Movie; comparison: MovieComparison }> = [];
 
 // API base URL
 const API_BASE = 'https://filmle-api-git-main-patryk-sredzinskis-projects.vercel.app/api';
@@ -68,6 +69,14 @@ let attemptsCounter = document.getElementById('attempts') as HTMLElement;
 const winMessage = document.getElementById('winMessage') as HTMLElement;
 let winAttempts = document.getElementById('winAttempts') as HTMLElement;
 const movieTitleHint = document.getElementById('movieTitleHint') as HTMLElement;
+const mysteryYear = document.getElementById('mysteryYear') as HTMLElement;
+const mysteryBudget = document.getElementById('mysteryBudget') as HTMLElement;
+const mysteryRevenue = document.getElementById('mysteryRevenue') as HTMLElement;
+const mysteryGenres = document.getElementById('mysteryGenres') as HTMLElement;
+const mysteryCompanies = document.getElementById('mysteryCompanies') as HTMLElement;
+const mysteryCountries = document.getElementById('mysteryCountries') as HTMLElement;
+const mysteryCast = document.getElementById('mysteryCast') as HTMLElement;
+const mysteryDirector = document.getElementById('mysteryDirector') as HTMLElement;
 
 // Initialize game
 async function init(): Promise<void> {
@@ -154,6 +163,7 @@ async function startNewGame(): Promise<void> {
     
     attempts = 0;
     gameWon = false;
+    allGuesses = [];
     attemptsCounter.textContent = attempts.toString();
     guessesContainer.innerHTML = '';
     winMessage.classList.add('hidden');
@@ -162,6 +172,7 @@ async function startNewGame(): Promise<void> {
     movieSearch.focus();
     
     updateMovieTitleHint();
+    updateMysteryInfo();
 }
 
 // Generate underscores hint for movie title
@@ -301,7 +312,9 @@ async function selectMovie(movieId: number): Promise<void> {
     attemptsCounter.textContent = attempts.toString();
     
     const comparison = compareMovies(guessedMovieDetails, mysteryMovie);
+    allGuesses.push({ movie: guessedMovieDetails, comparison });
     displayGuess(guessedMovieDetails, comparison);
+    updateMysteryInfo();
     
     if (guessedMovieDetails.id === mysteryMovie.id) {
         gameWon = true;
@@ -903,6 +916,312 @@ function formatCurrencyShort(amount: number): string {
         return `${(amount / 1000).toFixed(1)} TYS $`;
     }
     return `${amount} $`;
+}
+
+// Update mystery movie info based on guesses
+function updateMysteryInfo(): void {
+    if (!mysteryMovie || allGuesses.length === 0) {
+        // Reset to ? if no guesses
+        if (mysteryYear) mysteryYear.textContent = '?';
+        if (mysteryBudget) mysteryBudget.textContent = '?';
+        if (mysteryRevenue) mysteryRevenue.textContent = '?';
+        if (mysteryGenres) mysteryGenres.innerHTML = '<span class="mystery-unknown">?</span>';
+        if (mysteryCompanies) mysteryCompanies.innerHTML = '<span class="mystery-unknown">?</span>';
+        if (mysteryCountries) mysteryCountries.innerHTML = '<span class="mystery-unknown">?</span>';
+        if (mysteryCast) mysteryCast.innerHTML = '<span class="mystery-unknown">?</span>';
+        if (mysteryDirector) mysteryDirector.innerHTML = '<span class="mystery-unknown">?</span>';
+        return;
+    }
+
+    // Calculate year range
+    let minYear: number | null = null;
+    let maxYear: number | null = null;
+    for (const guess of allGuesses) {
+        const year = guess.movie.release_date ? new Date(guess.movie.release_date).getFullYear() : null;
+        if (!year) continue;
+        
+        const result = guess.comparison.year.result;
+        if (result === 'match') {
+            minYear = year;
+            maxYear = year;
+            break;
+        } else if (result === 'newer' || result === 'much_newer') {
+            // Mystery is older, so mystery year < guessed year
+            if (maxYear === null || year < maxYear) {
+                maxYear = year;
+            }
+        } else if (result === 'older' || result === 'much_older') {
+            // Mystery is newer, so mystery year > guessed year
+            if (minYear === null || year > minYear) {
+                minYear = year;
+            }
+        }
+    }
+    
+    if (mysteryYear) {
+        if (minYear !== null && maxYear !== null) {
+            if (minYear === maxYear) {
+                mysteryYear.textContent = minYear.toString();
+            } else {
+                mysteryYear.textContent = `${minYear}-${maxYear}`;
+            }
+        } else if (minYear !== null) {
+            mysteryYear.textContent = `>${minYear}`;
+        } else if (maxYear !== null) {
+            mysteryYear.textContent = `<${maxYear}`;
+        } else {
+            mysteryYear.textContent = '?';
+        }
+    }
+
+    // Calculate budget range
+    let minBudget: number | null = null;
+    let maxBudget: number | null = null;
+    for (const guess of allGuesses) {
+        const budget = guess.movie.budget || 0;
+        if (budget === 0) continue;
+        
+        const result = guess.comparison.budget.result;
+        if (result === 'match') {
+            minBudget = budget;
+            maxBudget = budget;
+            break;
+        } else if (result === 'higher' || result === 'much_higher') {
+            // Mystery is lower, so mystery budget < guessed budget
+            if (maxBudget === null || budget < maxBudget) {
+                maxBudget = budget;
+            }
+        } else if (result === 'lower' || result === 'much_lower') {
+            // Mystery is higher, so mystery budget > guessed budget
+            if (minBudget === null || budget > minBudget) {
+                minBudget = budget;
+            }
+        }
+    }
+    
+    if (mysteryBudget) {
+        if (minBudget !== null && maxBudget !== null) {
+            if (Math.abs(minBudget - maxBudget) / Math.max(minBudget, maxBudget) < 0.1) {
+                mysteryBudget.textContent = formatCurrencyShort(minBudget);
+            } else {
+                mysteryBudget.textContent = `${formatCurrencyShort(minBudget)} - ${formatCurrencyShort(maxBudget)}`;
+            }
+        } else if (minBudget !== null) {
+            mysteryBudget.textContent = `>${formatCurrencyShort(minBudget)}`;
+        } else if (maxBudget !== null) {
+            mysteryBudget.textContent = `<${formatCurrencyShort(maxBudget)}`;
+        } else {
+            mysteryBudget.textContent = '?';
+        }
+    }
+
+    // Calculate revenue range
+    let minRevenue: number | null = null;
+    let maxRevenue: number | null = null;
+    for (const guess of allGuesses) {
+        const revenue = guess.movie.revenue || 0;
+        if (revenue === 0) continue;
+        
+        const result = guess.comparison.revenue.result;
+        if (result === 'match') {
+            minRevenue = revenue;
+            maxRevenue = revenue;
+            break;
+        } else if (result === 'higher' || result === 'much_higher') {
+            // Mystery is lower, so mystery revenue < guessed revenue
+            if (maxRevenue === null || revenue < maxRevenue) {
+                maxRevenue = revenue;
+            }
+        } else if (result === 'lower' || result === 'much_lower') {
+            // Mystery is higher, so mystery revenue > guessed revenue
+            if (minRevenue === null || revenue > minRevenue) {
+                minRevenue = revenue;
+            }
+        }
+    }
+    
+    if (mysteryRevenue) {
+        if (minRevenue !== null && maxRevenue !== null) {
+            if (Math.abs(minRevenue - maxRevenue) / Math.max(minRevenue, maxRevenue) < 0.1) {
+                mysteryRevenue.textContent = formatCurrencyShort(minRevenue);
+            } else {
+                mysteryRevenue.textContent = `${formatCurrencyShort(minRevenue)} - ${formatCurrencyShort(maxRevenue)}`;
+            }
+        } else if (minRevenue !== null) {
+            mysteryRevenue.textContent = `>${formatCurrencyShort(minRevenue)}`;
+        } else if (maxRevenue !== null) {
+            mysteryRevenue.textContent = `<${formatCurrencyShort(maxRevenue)}`;
+        } else {
+            mysteryRevenue.textContent = '?';
+        }
+    }
+
+    // Collect matched genres
+    const matchedGenres = new Set<number>();
+    for (const guess of allGuesses) {
+        guess.comparison.genres.matches.forEach(id => matchedGenres.add(id));
+    }
+    
+    if (mysteryGenres) {
+        if (matchedGenres.size > 0) {
+            const genreElements = Array.from(matchedGenres).map(genreId => {
+                // Find genre name from any guess
+                let genreName = '';
+                for (const guess of allGuesses) {
+                    const genre = guess.movie.genres.find(g => g.id === genreId);
+                    if (genre) {
+                        genreName = genre.name;
+                        break;
+                    }
+                }
+                const icon = getGenreIcon(genreId);
+                return `<span class="genre-icon hint-green" data-tooltip="${genreName}">${icon}</span>`;
+            });
+            mysteryGenres.innerHTML = genreElements.join('');
+        } else {
+            mysteryGenres.innerHTML = '<span class="mystery-unknown">?</span>';
+        }
+    }
+
+    // Collect matched companies
+    const matchedCompanies = new Set<string>();
+    for (const guess of allGuesses) {
+        guess.comparison.companies.matches.forEach(name => matchedCompanies.add(name));
+    }
+    
+    if (mysteryCompanies) {
+        if (matchedCompanies.size > 0) {
+            const companyElements = Array.from(matchedCompanies).slice(0, 3).map(companyName => {
+                // Find company logo from any guess
+                let logo = null;
+                for (const guess of allGuesses) {
+                    const company = guess.movie.production_companies.find(c => c.name === companyName);
+                    if (company && company.logo_path) {
+                        logo = `https://image.tmdb.org/t/p/w500${company.logo_path}`;
+                        break;
+                    }
+                }
+                const initials = getCompanyInitials(companyName);
+                if (logo) {
+                    return `<span class="company-logo hint-green" data-tooltip="${companyName}" data-image="${logo.replace('w500', 'w780')}"><img src="${logo}" alt="${companyName}" onerror="this.parentElement.innerHTML='<span class=\\'company-initials-fallback\\'>${initials}</span>'"></span>`;
+                } else {
+                    return `<span class="company-logo hint-green" data-tooltip="${companyName}"><span class="company-initials-fallback">${initials}</span></span>`;
+                }
+            });
+            mysteryCompanies.innerHTML = companyElements.join('');
+        } else {
+            mysteryCompanies.innerHTML = '<span class="mystery-unknown">?</span>';
+        }
+    }
+
+    // Collect matched countries
+    const matchedCountries = new Set<string>();
+    for (const guess of allGuesses) {
+        guess.comparison.countries.matches.forEach(name => matchedCountries.add(name));
+    }
+    
+    if (mysteryCountries) {
+        if (matchedCountries.size > 0) {
+            const countryElements = Array.from(matchedCountries).slice(0, 3).map(countryName => {
+                // Find country code from any guess
+                let countryCode = '';
+                for (const guess of allGuesses) {
+                    const country = guess.movie.production_countries.find(c => c.name === countryName);
+                    if (country) {
+                        countryCode = country.iso_3166_1;
+                        break;
+                    }
+                }
+                const namePL = getCountryNamePL(countryCode);
+                return `<span class="country-flag hint-green" data-tooltip="${namePL || countryName}"><img src="${getCountryFlagUrl(countryCode)}" alt="${namePL || countryName}" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\\'font-size: 0.7em;\\'>?</span>'"></span>`;
+            });
+            mysteryCountries.innerHTML = countryElements.join('');
+        } else {
+            mysteryCountries.innerHTML = '<span class="mystery-unknown">?</span>';
+        }
+    }
+
+    // Collect matched cast
+    const matchedCast = new Set<string>();
+    for (const guess of allGuesses) {
+        guess.comparison.cast.matches.forEach(name => matchedCast.add(name));
+    }
+    
+    if (mysteryCast) {
+        if (matchedCast.size > 0) {
+            const castElements = Array.from(matchedCast).slice(0, 3).map(actorName => {
+                // Find actor profile from any guess
+                let profileUrl = null;
+                for (const guess of allGuesses) {
+                    const actor = guess.movie.top_cast.find(a => a.name === actorName);
+                    if (actor && actor.profile_path) {
+                        profileUrl = `https://image.tmdb.org/t/p/w185${actor.profile_path}`;
+                        break;
+                    }
+                }
+                const initials = getActorInitials(actorName);
+                const hasImage = profileUrl ? 'has-image' : '';
+                const bgStyle = profileUrl ? `background-image: url('${profileUrl}');` : '';
+                return `<span class="actor-photo hint-green ${hasImage}" data-tooltip="Aktor: ${actorName}" style="${bgStyle}"><span class="actor-initials-fallback">${initials}</span></span>`;
+            });
+            mysteryCast.innerHTML = castElements.join('');
+        } else {
+            mysteryCast.innerHTML = '<span class="mystery-unknown">?</span>';
+        }
+    }
+
+    // Check for matched director
+    let matchedDirectorName: string | null = null;
+    for (const guess of allGuesses) {
+        if (guess.comparison.director.hasMatch && guess.movie.director) {
+            matchedDirectorName = guess.movie.director.name;
+            break;
+        }
+    }
+    
+    if (mysteryDirector) {
+        if (matchedDirectorName) {
+            // Find director profile from any guess
+            let profileUrl = null;
+            for (const guess of allGuesses) {
+                if (guess.movie.director && guess.movie.director.name === matchedDirectorName && guess.movie.director.profile_path) {
+                    profileUrl = `https://image.tmdb.org/t/p/w185${guess.movie.director.profile_path}`;
+                    break;
+                }
+            }
+            const initials = getActorInitials(matchedDirectorName);
+            const hasImage = profileUrl ? 'has-image' : '';
+            const bgStyle = profileUrl ? `background-image: url('${profileUrl}');` : '';
+            mysteryDirector.innerHTML = `<span class="director-photo hint-green ${hasImage}" data-tooltip="Reżyser: ${matchedDirectorName}" style="${bgStyle}"><span class="actor-initials-fallback">${initials}</span></span>`;
+        } else {
+            mysteryDirector.innerHTML = '<span class="mystery-unknown">?</span>';
+        }
+    }
+
+    // Add tooltip listeners for mystery info
+    if (mysteryGenres) {
+        mysteryGenres.querySelectorAll('[data-tooltip]').forEach(element => {
+            element.addEventListener('mouseenter', (e: Event) => {
+                const target = e.target as HTMLElement;
+                const tooltipText = target.getAttribute('data-tooltip');
+                const imageUrl = target.getAttribute('data-image');
+                showTooltip(tooltipText, target, imageUrl);
+            });
+        });
+    }
+    
+    [mysteryCompanies, mysteryCountries, mysteryCast, mysteryDirector].forEach(container => {
+        if (container) {
+            container.querySelectorAll('[data-tooltip]').forEach(element => {
+                element.addEventListener('mouseenter', (e: Event) => {
+                    const target = e.target as HTMLElement;
+                    const tooltipText = target.getAttribute('data-tooltip');
+                    const imageUrl = target.getAttribute('data-image');
+                    showTooltip(tooltipText, target, imageUrl);
+                });
+            });
+        }
+    });
 }
 
 if (document.readyState === 'loading') {
