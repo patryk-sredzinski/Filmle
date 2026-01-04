@@ -61,7 +61,7 @@ export class HintItem {
             if (this.config.tooltip) {
                 item.setAttribute('data-tooltip', this.config.tooltip);
             }
-            if (this.config.imageUrl && this.config.type !== 'photo') {
+            if (this.config.imageUrl) {
                 item.setAttribute('data-image', this.config.imageUrl);
             }
             // Set content based on type
