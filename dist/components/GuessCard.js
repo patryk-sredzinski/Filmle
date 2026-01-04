@@ -1,5 +1,12 @@
 import { HintGroup } from './HintGroup.js';
-import { formatCurrencyShort, getGenreIcon, getCompanyInitials, getCountryFlagUrl, getCountryNamePL, getActorInitials } from '../utils.js';
+import { YearHint } from './hints/YearHint.js';
+import { BudgetHint } from './hints/BudgetHint.js';
+import { RevenueHint } from './hints/RevenueHint.js';
+import { GenreHint } from './hints/GenreHint.js';
+import { CountryHint } from './hints/CountryHint.js';
+import { CompanyHint } from './hints/CompanyHint.js';
+import { DirectorHint } from './hints/DirectorHint.js';
+import { ActorHint } from './hints/ActorHint.js';
 export class GuessCard {
     constructor(config) {
         this.element = null;
@@ -50,215 +57,46 @@ export class GuessCard {
         const comparison = this.config.comparison;
         const groups = [];
         // Year
-        const year = movie.release_date ? new Date(movie.release_date).getFullYear() : '?';
-        let yearColor = 'red';
-        let yearArrow = '';
-        let yearTooltip = '';
-        if (comparison.year.result === 'unknown') {
-            yearColor = 'neutral';
-            yearArrow = '?';
-            yearTooltip = `Rok wydania: ${year} ?\nbrak danych`;
-        }
-        else if (comparison.year.result === 'match') {
-            yearColor = 'green';
-            yearArrow = '=';
-            yearTooltip = `Rok wydania: ${year} =\ntajemniczy film ma ten sam rok`;
-        }
-        else if (comparison.year.result === 'much_newer') {
-            yearColor = 'red';
-            yearArrow = '↓↓';
-            yearTooltip = `Rok wydania: ${year} ↓↓\ntajemniczy film jest dużo starszy`;
-        }
-        else if (comparison.year.result === 'newer') {
-            yearColor = 'yellow';
-            yearArrow = '↓';
-            yearTooltip = `Rok wydania: ${year} ↓\ntajemniczy film jest starszy`;
-        }
-        else if (comparison.year.result === 'older') {
-            yearColor = 'yellow';
-            yearArrow = '↑';
-            yearTooltip = `Rok wydania: ${year} ↑\ntajemniczy film jest nowszy`;
-        }
-        else if (comparison.year.result === 'much_older') {
-            yearColor = 'red';
-            yearArrow = '↑↑';
-            yearTooltip = `Rok wydania: ${year} ↑↑\ntajemniczy film jest dużo nowszy`;
-        }
-        groups.push({
-            type: 'year',
-            items: [{
-                    type: 'inner',
-                    color: yearColor,
-                    value: year.toString(),
-                    arrow: yearArrow,
-                    tooltip: yearTooltip
-                }]
-        });
+        const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
+        groups.push(YearHint.createForGuess({
+            year,
+            comparison: comparison.year
+        }));
         // Genres
-        const genreItems = movie.genres.map(genre => ({
-            type: 'genre',
-            color: (comparison.genres.matches.includes(genre.id) ? 'green' : 'red'),
-            content: getGenreIcon(genre.id),
-            tooltip: genre.name
+        groups.push(GenreHint.createForGuess({
+            genres: movie.genres,
+            comparison: comparison.genres
         }));
-        groups.push({
-            type: 'genres',
-            items: genreItems
-        });
         // Budget
-        const budgetValue = formatCurrencyShort(movie.budget || 0);
-        let budgetColor = 'red';
-        let budgetArrow = '';
-        let budgetTooltip = '';
-        if (comparison.budget.result === 'unknown') {
-            budgetColor = 'neutral';
-            budgetArrow = '?';
-            budgetTooltip = `Budżet: ${budgetValue} ?\nbrak danych`;
-        }
-        else if (comparison.budget.result === 'match') {
-            budgetColor = 'green';
-            budgetArrow = '=';
-            budgetTooltip = `Budżet: ${budgetValue} =\ntajemniczy film ma ten sam budżet`;
-        }
-        else if (comparison.budget.result === 'much_higher') {
-            budgetColor = 'red';
-            budgetArrow = '↓↓';
-            budgetTooltip = `Budżet: ${budgetValue} ↓↓\ntajemniczy film ma dużo mniejszy budżet`;
-        }
-        else if (comparison.budget.result === 'higher') {
-            budgetColor = 'yellow';
-            budgetArrow = '↓';
-            budgetTooltip = `Budżet: ${budgetValue} ↓\ntajemniczy film ma mniejszy budżet`;
-        }
-        else if (comparison.budget.result === 'lower') {
-            budgetColor = 'yellow';
-            budgetArrow = '↑';
-            budgetTooltip = `Budżet: ${budgetValue} ↑\ntajemniczy film ma większy budżet`;
-        }
-        else if (comparison.budget.result === 'much_lower') {
-            budgetColor = 'red';
-            budgetArrow = '↑↑';
-            budgetTooltip = `Budżet: ${budgetValue} ↑↑\ntajemniczy film ma dużo większy budżet`;
-        }
-        groups.push({
-            type: 'budget',
-            items: [{
-                    type: 'inner',
-                    color: budgetColor,
-                    icon: '💰',
-                    value: budgetValue,
-                    arrow: budgetArrow,
-                    tooltip: budgetTooltip
-                }]
-        });
+        groups.push(BudgetHint.createForGuess({
+            budget: movie.budget || 0,
+            comparison: comparison.budget
+        }));
         // Revenue
-        const revenueValue = formatCurrencyShort(movie.revenue || 0);
-        let revenueColor = 'red';
-        let revenueArrow = '';
-        let revenueTooltip = '';
-        if (comparison.revenue.result === 'unknown') {
-            revenueColor = 'neutral';
-            revenueArrow = '?';
-            revenueTooltip = `Box Office: ${revenueValue} ?\nbrak danych`;
-        }
-        else if (comparison.revenue.result === 'match') {
-            revenueColor = 'green';
-            revenueArrow = '=';
-            revenueTooltip = `Box Office: ${revenueValue} =\ntajemniczy film ma ten sam przychód`;
-        }
-        else if (comparison.revenue.result === 'much_higher') {
-            revenueColor = 'red';
-            revenueArrow = '↓↓';
-            revenueTooltip = `Box Office: ${revenueValue} ↓↓\ntajemniczy film ma dużo mniejszy przychód`;
-        }
-        else if (comparison.revenue.result === 'higher') {
-            revenueColor = 'yellow';
-            revenueArrow = '↓';
-            revenueTooltip = `Box Office: ${revenueValue} ↓\ntajemniczy film ma mniejszy przychód`;
-        }
-        else if (comparison.revenue.result === 'lower') {
-            revenueColor = 'yellow';
-            revenueArrow = '↑';
-            revenueTooltip = `Box Office: ${revenueValue} ↑\ntajemniczy film ma większy przychód`;
-        }
-        else if (comparison.revenue.result === 'much_lower') {
-            revenueColor = 'red';
-            revenueArrow = '↑↑';
-            revenueTooltip = `Box Office: ${revenueValue} ↑↑\ntajemniczy film ma dużo większy przychód`;
-        }
-        groups.push({
-            type: 'revenue',
-            items: [{
-                    type: 'inner',
-                    color: revenueColor,
-                    icon: '💵',
-                    value: revenueValue,
-                    arrow: revenueArrow,
-                    tooltip: revenueTooltip
-                }]
-        });
+        groups.push(RevenueHint.createForGuess({
+            revenue: movie.revenue || 0,
+            comparison: comparison.revenue
+        }));
         // Companies
-        const companyItems = movie.production_companies.map(company => ({
-            type: 'logo',
-            color: (comparison.companies.matches.includes(company.name) ? 'green' : 'red'),
-            content: getCompanyInitials(company.name),
-            tooltip: company.name,
-            imageUrl: company.logo_path ? `https://image.tmdb.org/t/p/w500${company.logo_path}` : undefined
+        groups.push(CompanyHint.createForGuess({
+            companies: movie.production_companies,
+            comparison: comparison.companies
         }));
-        groups.push({
-            type: 'companies',
-            items: companyItems
-        });
         // Countries
-        const countryItems = movie.production_countries.map(country => ({
-            type: 'flag',
-            color: (comparison.countries.matches.includes(country.name) ? 'green' : 'red'),
-            content: getCountryFlagUrl(country.iso_3166_1),
-            tooltip: getCountryNamePL(country.iso_3166_1) || country.name
+        groups.push(CountryHint.createForGuess({
+            countries: movie.production_countries,
+            comparison: comparison.countries
         }));
-        groups.push({
-            type: 'countries',
-            items: countryItems
-        });
         // Director
-        if (movie.director) {
-            groups.push({
-                type: 'director',
-                items: [{
-                        type: 'photo',
-                        color: (comparison.director.hasMatch ? 'green' : 'red'),
-                        content: getActorInitials(movie.director?.name || null),
-                        tooltip: `Reżyser: ${movie.director.name}`,
-                        imageUrl: movie.director.profile_path ? `https://image.tmdb.org/t/p/w185${movie.director.profile_path}` : undefined
-                    }]
-            });
-        }
-        else {
-            groups.push({
-                type: 'director',
-                items: []
-            });
-        }
-        // Cast - use actors from comparison (already sorted: matches first, then non-matches)
-        // Limit to max 3, prioritizing matches
-        const castItems = comparison.cast.guessedWithOrder.slice(0, 3).map(actorInfo => {
-            // Find the actor in movie.top_cast to get profile_path
-            const actor = movie.top_cast.find(a => a.name === actorInfo.name);
-            const profileUrl = actor?.profile_path
-                ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
-                : undefined;
-            return {
-                type: 'photo',
-                color: (actorInfo.isMatch ? 'green' : 'red'),
-                content: getActorInitials(actorInfo.name),
-                tooltip: `Aktor: ${actorInfo.name}`,
-                imageUrl: profileUrl
-            };
-        });
-        groups.push({
-            type: 'cast',
-            items: castItems
-        });
+        groups.push(DirectorHint.createForGuess({
+            director: movie.director,
+            comparison: comparison.director
+        }));
+        // Cast
+        groups.push(ActorHint.createForGuess({
+            cast: movie.top_cast,
+            comparison: comparison.cast
+        }));
         return groups;
     }
     getElement() {
