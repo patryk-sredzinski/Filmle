@@ -15,7 +15,7 @@ export class MysteryInfo {
     }
     render() {
         const container = document.createElement('div');
-        container.className = 'mystery-info guess-card';
+        container.className = 'mystery-info';
         // Header
         const header = document.createElement('div');
         header.className = 'mystery-header';
