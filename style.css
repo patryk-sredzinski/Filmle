@@ -268,7 +268,7 @@ h1 {
 .hint-block {
     min-width: 70px;
     width: 70px;
-    height: 70px;
+    height: 90px;
     border-radius: 8px;
     display: flex;
     flex-direction: column;
@@ -291,6 +291,7 @@ h1 {
     min-width: 90px;
     max-width: 140px;
     padding: 5px 8px;
+    height: 90px;
 }
 
 .hint-inner {
@@ -410,7 +411,7 @@ h1 {
 .cast-block {
     width: auto;
     min-width: 60px;
-    height: 70px;
+    height: 90px;
     padding: 8px;
     display: flex;
     flex-direction: row;
