@@ -341,18 +341,14 @@ function isHintAvailable(hintType: HintType): boolean {
         case 'reveal_director':
             // Check if director is already revealed
             if (hintsState.revealedDirector) {
-                console.log('Director already revealed');
                 return false;
             }
             // Check if mystery movie has a director
             const mysteryDirector = getDirector(mysteryMovie);
-            console.log('Mystery director:', mysteryDirector);
             if (!mysteryDirector) {
-                console.log('No director found in mystery movie');
                 return false;
             }
             // Available if not revealed (regardless of whether it was matched in guesses)
-            console.log('Director hint available');
             return true;
             
         case 'reveal_quote':
@@ -479,10 +475,8 @@ function handleHintClick(hintType: HintType): void {
             break;
             
         case 'reveal_director':
-            console.log('Revealing director...', hintsState.revealedDirector);
             hintsState.revealedDirector = true;
             hint.used = true;
-            console.log('Director revealed, updating mystery info...');
             updateMysteryInfo();
             break;
             
@@ -937,19 +931,16 @@ function formatCurrencyShort(amount: number): string {
 function updateMysteryInfo(): void {
     if (!mysteryInfoContainer) return;
     
-    console.log('updateMysteryInfo called, hintsState.revealedDirector:', hintsState.revealedDirector);
     mysteryInfoComponent = new MysteryInfo({ 
         allGuesses,
         mysteryMovie,
         hintState: hintsState
     });
     const mysteryInfoElement = mysteryInfoComponent.render();
-    console.log('MysteryInfo rendered, element:', mysteryInfoElement);
     
     // Replace the container content
     mysteryInfoContainer.innerHTML = '';
     mysteryInfoContainer.appendChild(mysteryInfoElement);
-    console.log('MysteryInfo element appended to container');
     
     // Add tooltip listeners
     mysteryInfoElement.querySelectorAll('[data-tooltip]').forEach(element => {

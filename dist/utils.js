@@ -102,20 +102,16 @@ export function getCompanyInitials(name) {
 }
 export function getDirector(movie) {
     if (!movie.crew || movie.crew.length === 0) {
-        console.log('No crew found in movie');
         return null;
     }
-    console.log('Crew members:', movie.crew.map(m => ({ name: m.name, job: m.job })));
     // Try to find director - check multiple possible job values
     const director = movie.crew.find(member => {
         const job = member.job?.toLowerCase() || '';
         return job === 'director' || job === 'directing';
     });
     if (!director) {
-        console.log('No director found in crew');
         return null;
     }
-    console.log('Director found:', director.name);
     return {
         name: director.name,
         profile_path: director.profile_path
