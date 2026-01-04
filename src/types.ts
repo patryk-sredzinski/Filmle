@@ -1,6 +1,7 @@
 // Type definitions for Filmole
 
 export interface Genre {
+    id: number;
     name: string;
 }
 
@@ -114,9 +115,9 @@ export interface RevenueComparison {
 }
 
 export interface GenresComparison {
-    guessed: string[];
-    mystery: string[];
-    matches: string[];
+    guessed: number[];
+    mystery: number[];
+    matches: number[];
     hasMatch: boolean;
 }
 

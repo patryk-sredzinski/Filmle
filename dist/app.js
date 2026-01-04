@@ -1,10 +1,7 @@
-import { t } from './translations/index.js';
 // Game state
 let mysteryMovie = null;
 let attempts = 0;
 let gameWon = false;
-// Language state
-let currentLanguage = localStorage.getItem('language') || 'pl';
 // API base URL
 const API_BASE = 'https://filmle-api-git-main-patryk-sredzinskis-projects.vercel.app/api';
 // Global variable to track tooltip state
@@ -50,9 +47,6 @@ let attemptsCounter = document.getElementById('attempts');
 const winMessage = document.getElementById('winMessage');
 let winAttempts = document.getElementById('winAttempts');
 const movieTitleHint = document.getElementById('movieTitleHint');
-const languageLabel = document.getElementById('languageLabel');
-const langPL = document.getElementById('langPL');
-const langEN = document.getElementById('langEN');
 // Initialize game
 async function init() {
     // Track mouse position globally for tooltip detection
@@ -86,73 +80,7 @@ async function init() {
         }
     });
     setupEventListeners();
-    setupLanguageSwitcher();
-    updateLanguage();
     await startNewGame();
-}
-// Setup language switcher
-function setupLanguageSwitcher() {
-    if (!langPL || !langEN || !languageLabel)
-        return;
-    langPL.addEventListener('click', () => {
-        currentLanguage = 'pl';
-        localStorage.setItem('language', 'pl');
-        updateLanguage();
-    });
-    langEN.addEventListener('click', () => {
-        currentLanguage = 'en';
-        localStorage.setItem('language', 'en');
-        updateLanguage();
-    });
-    // Update active button
-    updateLanguageButtons();
-}
-function updateLanguageButtons() {
-    if (!langPL || !langEN)
-        return;
-    langPL.classList.toggle('active', currentLanguage === 'pl');
-    langEN.classList.toggle('active', currentLanguage === 'en');
-}
-// Update all UI texts based on current language
-function updateLanguage() {
-    if (!movieSearch || !attemptsCounter || !winMessage || !movieTitleHint || !languageLabel)
-        return;
-    // Update header
-    const header = document.querySelector('header h1');
-    const subtitle = document.querySelector('header .subtitle');
-    if (header)
-        header.textContent = t('title', currentLanguage);
-    if (subtitle)
-        subtitle.textContent = t('subtitle', currentLanguage);
-    // Update search placeholder
-    movieSearch.placeholder = t('searchPlaceholder', currentLanguage);
-    // Update attempts label
-    const attemptsLabel = document.querySelector('.attempts-counter span');
-    if (attemptsLabel) {
-        attemptsLabel.innerHTML = `${t('attempts', currentLanguage)}: <strong id="attempts">${attempts}</strong>`;
-        // Re-get the counter after innerHTML update
-        const newCounter = document.getElementById('attempts');
-        if (newCounter)
-            attemptsCounter = newCounter;
-    }
-    // Update language switcher
-    languageLabel.textContent = t('language', currentLanguage) + ':';
-    // Update win message if visible
-    if (!winMessage.classList.contains('hidden')) {
-        const winTitle = winMessage.querySelector('h2');
-        const winText = winMessage.querySelector('p');
-        if (winTitle)
-            winTitle.textContent = t('congratulations', currentLanguage);
-        if (winText) {
-            winText.innerHTML = `${t('winMessage', currentLanguage)} <strong id="winAttempts">${attempts}</strong> ${t('attemptsText', currentLanguage)}!`;
-            const newWinAttempts = document.getElementById('winAttempts');
-            if (newWinAttempts)
-                winAttempts = newWinAttempts;
-        }
-    }
-    // Update HTML lang attribute
-    document.documentElement.lang = currentLanguage;
-    updateLanguageButtons();
 }
 // Setup event listeners
 function setupEventListeners() {
@@ -190,7 +118,7 @@ async function startNewGame() {
     }
     catch (error) {
         console.error('Error fetching mystery movie:', error);
-        alert(t('errorLoadingMystery', currentLanguage));
+        alert('Błąd: Nie udało się załadować tajemniczego filmu. Sprawdź konfigurację CORS na serwerze API lub odśwież stronę.');
         movieSearch.disabled = true;
         return;
     }
@@ -323,7 +251,7 @@ async function selectMovie(movieId) {
     }
     catch (error) {
         console.error('Error fetching movie details:', error);
-        alert(t('errorLoadingDetails', currentLanguage));
+        alert('Błąd: Nie udało się załadować szczegółów filmu.');
         return;
     }
     attempts++;
@@ -337,9 +265,9 @@ async function selectMovie(movieId) {
         const winTitle = winMessage.querySelector('h2');
         const winText = winMessage.querySelector('p');
         if (winTitle)
-            winTitle.textContent = t('congratulations', currentLanguage);
+            winTitle.textContent = '🎉 Gratulacje!';
         if (winText) {
-            winText.innerHTML = `${t('winMessage', currentLanguage)} <strong id="winAttempts">${attempts}</strong> ${t('attemptsText', currentLanguage)}!`;
+            winText.innerHTML = `Odgadłeś film w <strong id="winAttempts">${attempts}</strong> próbach!`;
             const newWinAttempts = document.getElementById('winAttempts');
             if (newWinAttempts)
                 winAttempts = newWinAttempts;
@@ -373,8 +301,8 @@ function compareMovies(guessed, mystery) {
             yearResult = 'older';
         }
     }
-    const guessedGenres = guessed.genres.map(genre => genre.name) || [];
-    const mysteryGenres = mystery.genres.map(genre => genre.name) || [];
+    const guessedGenres = guessed.genres.map(genre => genre.id) || [];
+    const mysteryGenres = mystery.genres.map(genre => genre.id) || [];
     const commonGenres = guessedGenres.filter(g => mysteryGenres.includes(g));
     const guessedBudget = guessed.budget || 0;
     const mysteryBudget = mystery.budget || 0;
@@ -500,30 +428,39 @@ function compareMovies(guessed, mystery) {
     };
     return comparison;
 }
-// Genre icons mapping
+// Genre icons mapping (using genre IDs from TMDB API)
 const genreIcons = {
-    'Dramat': '🎭',
-    'Komedia': '😂',
-    'Kryminał': '🔫',
-    'Horror': '👻',
-    'Thriller': '🔪',
-    'Akcja': '💥',
-    'Przygodowy': '🗺️',
-    'Sci-Fi': '🚀',
-    'Fantasy': '🧙',
-    'Romans': '💕',
-    'Animacja': '🎨',
-    'Familijny': '👨‍👩‍👧‍👦',
-    'Tajemnica': '🔍',
-    'Wojenny': '⚔️',
-    'Western': '🤠',
-    'Biograficzny': '📖',
-    'Muzyczny': '🎵',
-    'Sportowy': '⚽',
-    'Dokumentalny': '📹'
+    28: '💥', // Action
+    12: '🗺️', // Adventure
+    16: '🎨', // Animation
+    99: '📹', // Documentary
+    18: '🎭', // Drama
+    10751: '👨‍👩‍👧‍👦', // Family
+    14: '🧙', // Fantasy
+    36: '📜', // History
+    27: '👻', // Horror
+    10402: '🎵', // Music
+    9648: '🔍', // Mystery
+    10749: '💕', // Romance
+    878: '🚀', // Science Fiction
+    10770: '📺', // TV Movie
+    53: '🔪', // Thriller
+    10752: '⚔️', // War
+    37: '🤠', // Western
+    35: '😂', // Comedy
+    80: '🔫', // Crime
+    10769: '🌍', // Foreign
+    10759: '🎬', // Action & Adventure (TV)
+    10762: '👶', // Kids (TV)
+    10763: '📡', // News (TV)
+    10764: '📺', // Reality (TV)
+    10765: '🚀', // Sci-Fi & Fantasy (TV)
+    10766: '📺', // Soap (TV)
+    10767: '💬', // Talk (TV)
+    10768: '⚔️', // War & Politics (TV)
 };
-function getGenreIcon(genreName) {
-    return genreIcons[genreName] || '🎬';
+function getGenreIcon(genreId) {
+    return genreIcons[genreId] || '🎬';
 }
 function getCountryFlagUrl(countryCode) {
     if (!countryCode)
@@ -630,32 +567,32 @@ function displayGuess(movie, comparison) {
     if (comparison.year.result === 'unknown') {
         yearClass = 'hint-neutral';
         yearArrow = '?';
-        yearTooltip = t('yearUnknown', currentLanguage, { year: String(year) });
+        yearTooltip = `Rok wydania: ${year} ?\nbrak danych`;
     }
     else if (comparison.year.result === 'match') {
         yearClass = 'hint-green';
         yearArrow = '=';
-        yearTooltip = t('yearMatch', currentLanguage, { year: String(year) });
+        yearTooltip = `Rok wydania: ${year} =\ntajemniczy film ma ten sam rok`;
     }
     else if (comparison.year.result === 'much_newer') {
         yearClass = 'hint-red';
         yearArrow = '↓↓';
-        yearTooltip = t('yearMuchOlder', currentLanguage, { year: String(year) });
+        yearTooltip = `Rok wydania: ${year} ↓↓\ntajemniczy film jest dużo starszy`;
     }
     else if (comparison.year.result === 'newer') {
         yearClass = 'hint-yellow';
         yearArrow = '↓';
-        yearTooltip = t('yearOlder', currentLanguage, { year: String(year) });
+        yearTooltip = `Rok wydania: ${year} ↓\ntajemniczy film jest starszy`;
     }
     else if (comparison.year.result === 'older') {
         yearClass = 'hint-yellow';
         yearArrow = '↑';
-        yearTooltip = t('yearNewer', currentLanguage, { year: String(year) });
+        yearTooltip = `Rok wydania: ${year} ↑\ntajemniczy film jest nowszy`;
     }
     else if (comparison.year.result === 'much_older') {
         yearClass = 'hint-red';
         yearArrow = '↑↑';
-        yearTooltip = t('yearMuchNewer', currentLanguage, { year: String(year) });
+        yearTooltip = `Rok wydania: ${year} ↑↑\ntajemniczy film jest dużo nowszy`;
     }
     let budgetClass = 'hint-red';
     let budgetArrow = '';
@@ -664,32 +601,32 @@ function displayGuess(movie, comparison) {
     if (comparison.budget.result === 'unknown') {
         budgetClass = 'hint-neutral';
         budgetArrow = '?';
-        budgetTooltip = t('budgetUnknown', currentLanguage, { value: budgetValue });
+        budgetTooltip = `Budżet: ${budgetValue} ?\nbrak danych`;
     }
     else if (comparison.budget.result === 'match') {
         budgetClass = 'hint-green';
         budgetArrow = '=';
-        budgetTooltip = t('budgetMatch', currentLanguage, { value: budgetValue });
+        budgetTooltip = `Budżet: ${budgetValue} =\ntajemniczy film ma ten sam budżet`;
     }
     else if (comparison.budget.result === 'much_higher') {
         budgetClass = 'hint-red';
         budgetArrow = '↓↓';
-        budgetTooltip = t('budgetMuchLower', currentLanguage, { value: budgetValue });
+        budgetTooltip = `Budżet: ${budgetValue} ↓↓\ntajemniczy film ma dużo mniejszy budżet`;
     }
     else if (comparison.budget.result === 'higher') {
         budgetClass = 'hint-yellow';
         budgetArrow = '↓';
-        budgetTooltip = t('budgetLower', currentLanguage, { value: budgetValue });
+        budgetTooltip = `Budżet: ${budgetValue} ↓\ntajemniczy film ma mniejszy budżet`;
     }
     else if (comparison.budget.result === 'lower') {
         budgetClass = 'hint-yellow';
         budgetArrow = '↑';
-        budgetTooltip = t('budgetHigher', currentLanguage, { value: budgetValue });
+        budgetTooltip = `Budżet: ${budgetValue} ↑\ntajemniczy film ma większy budżet`;
     }
     else if (comparison.budget.result === 'much_lower') {
         budgetClass = 'hint-red';
         budgetArrow = '↑↑';
-        budgetTooltip = t('budgetMuchHigher', currentLanguage, { value: budgetValue });
+        budgetTooltip = `Budżet: ${budgetValue} ↑↑\ntajemniczy film ma dużo większy budżet`;
     }
     let revenueClass = 'hint-red';
     let revenueArrow = '';
@@ -698,38 +635,39 @@ function displayGuess(movie, comparison) {
     if (comparison.revenue.result === 'unknown') {
         revenueClass = 'hint-neutral';
         revenueArrow = '?';
-        revenueTooltip = t('revenueUnknown', currentLanguage, { value: revenueValue });
+        revenueTooltip = `Przychód: ${revenueValue} ?\nbrak danych`;
     }
     else if (comparison.revenue.result === 'match') {
         revenueClass = 'hint-green';
         revenueArrow = '=';
-        revenueTooltip = t('revenueMatch', currentLanguage, { value: revenueValue });
+        revenueTooltip = `Przychód: ${revenueValue} =\ntajemniczy film ma ten sam przychód`;
     }
     else if (comparison.revenue.result === 'much_higher') {
         revenueClass = 'hint-red';
         revenueArrow = '↓↓';
-        revenueTooltip = t('revenueMuchLower', currentLanguage, { value: revenueValue });
+        revenueTooltip = `Przychód: ${revenueValue} ↓↓\ntajemniczy film ma dużo mniejszy przychód`;
     }
     else if (comparison.revenue.result === 'higher') {
         revenueClass = 'hint-yellow';
         revenueArrow = '↓';
-        revenueTooltip = t('revenueLower', currentLanguage, { value: revenueValue });
+        revenueTooltip = `Przychód: ${revenueValue} ↓\ntajemniczy film ma mniejszy przychód`;
     }
     else if (comparison.revenue.result === 'lower') {
         revenueClass = 'hint-yellow';
         revenueArrow = '↑';
-        revenueTooltip = t('revenueHigher', currentLanguage, { value: revenueValue });
+        revenueTooltip = `Przychód: ${revenueValue} ↑\ntajemniczy film ma większy przychód`;
     }
     else if (comparison.revenue.result === 'much_lower') {
         revenueClass = 'hint-red';
         revenueArrow = '↑↑';
-        revenueTooltip = t('revenueMuchHigher', currentLanguage, { value: revenueValue });
+        revenueTooltip = `Przychód: ${revenueValue} ↑↑\ntajemniczy film ma dużo większy przychód`;
     }
     const guessedGenres = (movie.genres || []).map(genre => {
-        const isMatch = comparison.genres.matches.includes(genre.name);
+        const isMatch = comparison.genres.matches.includes(genre.id);
         return {
+            id: genre.id,
             name: genre.name,
-            icon: getGenreIcon(genre.name),
+            icon: getGenreIcon(genre.id),
             isMatch: isMatch
         };
     });
@@ -842,7 +780,7 @@ function displayGuess(movie, comparison) {
         const hasImage = d.profileUrl ? 'has-image' : '';
         return `
                     <span class="director-photo ${d.isMatch ? 'hint-green' : 'hint-red'} ${hasImage}" 
-                          data-tooltip="${t('director', currentLanguage, { name: d.name })}"
+                          data-tooltip="Reżyser: ${d.name}"
                           data-image="${d.profileUrlLarge || ''}"
                           data-initials="${d.initials}"
                           style="${d.profileUrl ? `background-image: url('${d.profileUrl}');` : ''}">
@@ -857,7 +795,7 @@ function displayGuess(movie, comparison) {
         const hasImage = a.profileUrl ? 'has-image' : '';
         return `
                     <span class="actor-photo ${a.isMatch ? 'hint-green' : 'hint-red'} ${hasImage}" 
-                          data-tooltip="${t('actor', currentLanguage, { name: a.name })}"
+                          data-tooltip="Aktor: ${a.name}"
                           data-image="${a.profileUrlLarge || ''}"
                           data-initials="${a.initials}"
                           style="${a.profileUrl ? `background-image: url('${a.profileUrl}');` : ''}">
@@ -916,4 +854,5 @@ if (document.readyState === 'loading') {
 else {
     init();
 }
+export {};
 //# sourceMappingURL=app.js.map
