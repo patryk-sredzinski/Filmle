@@ -67,14 +67,14 @@ export class HintsMenu {
         if (!hint.enabled) {
             item.classList.add('disabled');
         }
-        if (hint.used && hint.id === 'show_letters') {
+        if (hint.used && (hint.id === 'show_letters' || hint.id === 'reveal_director' || hint.id === 'reveal_quote' || hint.id === 'reveal_description')) {
             item.classList.add('used');
         }
 
         const name = document.createElement('div');
         name.className = 'hint-item-name';
         name.textContent = hint.name;
-        if (hint.used && hint.id === 'show_letters') {
+        if (hint.used && (hint.id === 'show_letters' || hint.id === 'reveal_director' || hint.id === 'reveal_quote' || hint.id === 'reveal_description')) {
             name.textContent += ' ✓';
         }
         item.appendChild(name);
@@ -85,8 +85,8 @@ export class HintsMenu {
         item.appendChild(description);
 
         if (hint.enabled) {
-            // For show_letters, check if used
-            if (hint.id === 'show_letters' && hint.used) {
+            // For show_letters and reveal_director, check if used
+            if ((hint.id === 'show_letters' || hint.id === 'reveal_director') && hint.used) {
                 // Already used, don't make clickable
             } else {
                 item.addEventListener('click', () => {

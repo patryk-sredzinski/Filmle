@@ -80,6 +80,7 @@ export class MysteryInfo {
         return container;
     }
     createGroupsConfig() {
+        console.log('createGroupsConfig called, hintState:', this.config.hintState);
         const groups = [];
         const allGuesses = this.config.allGuesses;
         if (allGuesses.length === 0) {
@@ -255,15 +256,35 @@ export class MysteryInfo {
             });
         }
         const matchedCast = Array.from(matchedCastMap.values());
-        // Check for matched director
+        // Check for matched director or revealed director from hints
         let matchedDirector = null;
-        for (const guess of allGuesses) {
-            const director = getDirector(guess.movie);
-            if (guess.comparison.director.isMatch && director) {
+        // First check if director was revealed via hint
+        console.log('=== DIRECTOR CHECK ===');
+        console.log('hintState:', this.config.hintState);
+        console.log('revealedDirector:', this.config.hintState.revealedDirector);
+        console.log('mysteryMovie:', this.config.mysteryMovie);
+        if (this.config.hintState.revealedDirector && this.config.mysteryMovie) {
+            console.log('Director was revealed via hint, getting director...');
+            const director = getDirector(this.config.mysteryMovie);
+            console.log('Revealed director:', director);
+            if (director) {
                 matchedDirector = director;
-                break;
+                console.log('Setting matchedDirector to:', matchedDirector);
             }
         }
+        // If not revealed, check if matched from guesses
+        if (!matchedDirector) {
+            console.log('Director not revealed, checking guesses...');
+            for (const guess of allGuesses) {
+                const director = getDirector(guess.movie);
+                if (guess.comparison.director.isMatch && director) {
+                    matchedDirector = director;
+                    console.log('Found matched director from guess:', matchedDirector);
+                    break;
+                }
+            }
+        }
+        console.log('Final matchedDirector:', matchedDirector);
         // Year - single item
         groups.push({
             type: 'year',
@@ -301,13 +322,16 @@ export class MysteryInfo {
             emptyContent: matchedCountries.length === 0 ? 'Kraje: ?\nbrak danych' : undefined
         });
         // Director - single item (if exists)
+        console.log('Final matchedDirector:', matchedDirector);
         if (matchedDirector) {
+            console.log('Adding director to groups');
             groups.push({
                 type: 'director',
                 items: [DirectorHint.create({ director: matchedDirector, isMatch: true })]
             });
         }
         else {
+            console.log('No director, adding empty director group');
             groups.push({
                 type: 'director',
                 items: [],

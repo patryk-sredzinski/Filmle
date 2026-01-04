@@ -32,6 +32,7 @@ let hintsState: HintState = {
     revealedLetters: new Set(),
     revealedGenres: new Set(),
     revealedActors: new Set(),
+    revealedDirector: false,
     showQuote: false,
     showDescription: false
 };
@@ -58,7 +59,12 @@ let winAttempts = document.getElementById('winAttempts') as HTMLElement;
 const movieTitleHint = document.getElementById('movieTitleHint') as HTMLElement;
 const mysteryInfoContainer = document.getElementById('mysteryInfo') as HTMLElement;
 let mysteryInfoComponent: MysteryInfo | null = null;
-const gameInfoContainer = document.querySelector('.game-info') as HTMLElement;
+let gameInfoContainer: HTMLElement | null = null;
+const gameContent = document.getElementById('gameContent') as HTMLElement;
+const loadingMessage = document.getElementById('loadingMessage') as HTMLElement;
+const instructionsButton = document.getElementById('instructionsButton') as HTMLButtonElement;
+const instructionsModal = document.getElementById('instructionsModal') as HTMLElement;
+const closeModalButton = document.getElementById('closeModal') as HTMLButtonElement;
 
 // Initialize game
 async function init(): Promise<void> {
@@ -96,6 +102,7 @@ async function init(): Promise<void> {
     });
     
     setupEventListeners();
+    setupModalListeners();
     await startNewGame();
 }
 
@@ -114,9 +121,49 @@ function setupEventListeners(): void {
     });
 }
 
+// Setup modal listeners
+function setupModalListeners(): void {
+    if (instructionsButton) {
+        instructionsButton.addEventListener('click', () => {
+            if (instructionsModal) {
+                instructionsModal.classList.remove('hidden');
+            }
+        });
+    }
+    
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', () => {
+            if (instructionsModal) {
+                instructionsModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Close modal when clicking on overlay
+    if (instructionsModal) {
+        const overlay = instructionsModal.querySelector('.modal-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                instructionsModal.classList.add('hidden');
+            });
+        }
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !instructionsModal.classList.contains('hidden')) {
+                instructionsModal.classList.add('hidden');
+            }
+        });
+    }
+}
+
 // Start a new game
 async function startNewGame(): Promise<void> {
     if (!movieSearch || !attemptsCounter || !guessesContainer || !winMessage || !movieTitleHint) return;
+    
+    // Show loading state - hide game content, show loading message
+    if (gameContent) gameContent.classList.add('hidden');
+    if (loadingMessage) loadingMessage.classList.remove('hidden');
     
     try {
         const response = await fetch(`${API_BASE}/mystery_movie`, {
@@ -146,8 +193,16 @@ async function startNewGame(): Promise<void> {
         console.error('Error fetching mystery movie:', error);
         alert('Błąd: Nie udało się załadować tajemniczego filmu. Sprawdź konfigurację CORS na serwerze API lub odśwież stronę.');
         movieSearch.disabled = true;
+        // Keep loading message visible on error
         return;
     }
+    
+    // Hide loading message and show game content
+    if (loadingMessage) loadingMessage.classList.add('hidden');
+    if (gameContent) gameContent.classList.remove('hidden');
+    
+    // Get gameInfoContainer now that gameContent is visible
+    gameInfoContainer = document.querySelector('.game-info') as HTMLElement;
     
     attempts = 0;
     gameWon = false;
@@ -165,6 +220,7 @@ async function startNewGame(): Promise<void> {
         revealedLetters: new Set(),
         revealedGenres: new Set(),
         revealedActors: new Set(),
+        revealedDirector: false,
         showQuote: false,
         showDescription: false
     };
@@ -206,11 +262,15 @@ function updateMovieTitleHint(): void {
     
     const title = mysteryMovie.title || mysteryMovie.original_title || '';
     
-    // If showLetters hint not used, show nothing
+    // If showLetters hint not used, hide the element
     if (!hintsState.showLetters) {
+        movieTitleHint.classList.add('hidden');
         movieTitleHint.textContent = '';
         return;
     }
+    
+    // Show the element
+    movieTitleHint.classList.remove('hidden');
     
     const hint = title
         .split('')
@@ -259,6 +319,10 @@ function isHintAvailable(hintType: HintType): boolean {
             );
             
         case 'reveal_actor':
+            // Limit to maximum 3 actors
+            if (hintsState.revealedActors.size >= 3) {
+                return false;
+            }
             // Get matched actors from guesses
             const matchedActorNames = new Set<string>();
             allGuesses.forEach(guess => {
@@ -273,6 +337,23 @@ function isHintAvailable(hintType: HintType): boolean {
             return cast.some((actor, index) => 
                 !hintsState.revealedActors.has(index) && !matchedActorNames.has(actor.name)
             );
+            
+        case 'reveal_director':
+            // Check if director is already revealed
+            if (hintsState.revealedDirector) {
+                console.log('Director already revealed');
+                return false;
+            }
+            // Check if mystery movie has a director
+            const mysteryDirector = getDirector(mysteryMovie);
+            console.log('Mystery director:', mysteryDirector);
+            if (!mysteryDirector) {
+                console.log('No director found in mystery movie');
+                return false;
+            }
+            // Available if not revealed (regardless of whether it was matched in guesses)
+            console.log('Director hint available');
+            return true;
             
         case 'reveal_quote':
             return !hintsState.showQuote && !!(mysteryMovie.quote_pl || mysteryMovie.quote_en);
@@ -297,6 +378,9 @@ function updateHintsAvailability(): void {
             hint.enabled = isHintAvailable('reveal_genre');
         } else if (hint.id === 'reveal_actor') {
             hint.enabled = isHintAvailable('reveal_actor');
+        } else if (hint.id === 'reveal_director') {
+            hint.enabled = isHintAvailable('reveal_director');
+            hint.used = hintsState.revealedDirector;
         } else if (hint.id === 'reveal_quote') {
             hint.enabled = isHintAvailable('reveal_quote');
             hint.used = !isHintAvailable('reveal_quote');
@@ -368,6 +452,10 @@ function handleHintClick(hintType: HintType): void {
             break;
             
         case 'reveal_actor':
+            // Limit to maximum 3 actors
+            if (hintsState.revealedActors.size >= 3) {
+                break;
+            }
             // Get matched actors from guesses
             const matchedActorNames = new Set<string>();
             allGuesses.forEach(guess => {
@@ -388,6 +476,14 @@ function handleHintClick(hintType: HintType): void {
                     break;
                 }
             }
+            break;
+            
+        case 'reveal_director':
+            console.log('Revealing director...', hintsState.revealedDirector);
+            hintsState.revealedDirector = true;
+            hint.used = true;
+            console.log('Director revealed, updating mystery info...');
+            updateMysteryInfo();
             break;
             
         case 'reveal_quote':
@@ -841,16 +937,19 @@ function formatCurrencyShort(amount: number): string {
 function updateMysteryInfo(): void {
     if (!mysteryInfoContainer) return;
     
+    console.log('updateMysteryInfo called, hintsState.revealedDirector:', hintsState.revealedDirector);
     mysteryInfoComponent = new MysteryInfo({ 
         allGuesses,
         mysteryMovie,
         hintState: hintsState
     });
     const mysteryInfoElement = mysteryInfoComponent.render();
+    console.log('MysteryInfo rendered, element:', mysteryInfoElement);
     
     // Replace the container content
     mysteryInfoContainer.innerHTML = '';
     mysteryInfoContainer.appendChild(mysteryInfoElement);
+    console.log('MysteryInfo element appended to container');
     
     // Add tooltip listeners
     mysteryInfoElement.querySelectorAll('[data-tooltip]').forEach(element => {

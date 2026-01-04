@@ -24,7 +24,14 @@ export const HINTS = [
     {
         id: 'reveal_actor',
         name: 'Wyświetl aktora',
-        description: 'Odkrywa jednego z aktorów tajemniczego filmu',
+        description: 'Odkrywa jednego z aktorów tajemniczego filmu (max 3)',
+        enabled: true,
+        used: false
+    },
+    {
+        id: 'reveal_director',
+        name: 'Wyświetl reżysera',
+        description: 'Odkrywa reżysera tajemniczego filmu',
         enabled: true,
         used: false
     },
