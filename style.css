@@ -90,6 +90,51 @@ h1 {
     transform: none;
 }
 
+.mystery-quote-section,
+.mystery-description-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.mystery-section-title {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 12px;
+}
+
+.mystery-quotes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mystery-quote {
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    font-style: italic;
+    line-height: 1.6;
+    color: #555;
+}
+
+.mystery-quote strong {
+    color: #667eea;
+    font-style: normal;
+    margin-right: 8px;
+}
+
+.mystery-description {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    line-height: 1.7;
+    color: #555;
+    text-align: justify;
+}
+
 
 .game-controls {
     display: flex;

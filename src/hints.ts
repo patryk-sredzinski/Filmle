@@ -1,6 +1,6 @@
 // Hint system for the game
 
-export type HintType = 'show_letters' | 'reveal_random_letter' | 'reveal_genre' | 'reveal_actor';
+export type HintType = 'show_letters' | 'reveal_random_letter' | 'reveal_genre' | 'reveal_actor' | 'reveal_quote' | 'reveal_description';
 
 export interface Hint {
     id: HintType;
@@ -15,6 +15,8 @@ export interface HintState {
     revealedLetters: Set<number>; // Indices of revealed letters
     revealedGenres: Set<number>; // Indices of revealed genres
     revealedActors: Set<number>; // Indices of revealed actors
+    showQuote: boolean;
+    showDescription: boolean;
 }
 
 export const HINTS: Hint[] = [
@@ -45,6 +47,21 @@ export const HINTS: Hint[] = [
         description: 'Odkrywa jednego z aktorów tajemniczego filmu',
         enabled: true,
         used: false
+    },
+    {
+        id: 'reveal_quote',
+        name: 'Wyświetl cytat',
+        description: 'Pokazuje cytaty z filmu w wersji polskiej i angielskiej',
+        enabled: true,
+        used: false
+    },
+    {
+        id: 'reveal_description',
+        name: 'Wyświetl opis filmu',
+        description: 'Pokazuje opis tajemniczego filmu',
+        enabled: true,
+        used: false
     }
 ];
+
 

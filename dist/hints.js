@@ -27,6 +27,20 @@ export const HINTS = [
         description: 'Odkrywa jednego z aktorów tajemniczego filmu',
         enabled: true,
         used: false
+    },
+    {
+        id: 'reveal_quote',
+        name: 'Wyświetl cytat',
+        description: 'Pokazuje cytaty z filmu w wersji polskiej i angielskiej',
+        enabled: true,
+        used: false
+    },
+    {
+        id: 'reveal_description',
+        name: 'Wyświetl opis filmu',
+        description: 'Pokazuje opis tajemniczego filmu',
+        enabled: true,
+        used: false
     }
 ];
 //# sourceMappingURL=hints.js.map

@@ -7,3 +7,4 @@ export { CompanyHint, CompanyHintConfig } from './CompanyHint.js';
 export { DirectorHint, DirectorHintConfig } from './DirectorHint.js';
 export { ActorHint, ActorHintConfig } from './ActorHint.js';
 
+

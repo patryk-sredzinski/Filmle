@@ -53,6 +53,56 @@ export class MysteryInfo {
         });
 
         container.appendChild(hintsRow);
+
+        // Quote section (if revealed)
+        if (this.config.hintState.showQuote && this.config.mysteryMovie) {
+            const quoteSection = document.createElement('div');
+            quoteSection.className = 'mystery-quote-section';
+            
+            const quoteTitle = document.createElement('div');
+            quoteTitle.className = 'mystery-section-title';
+            quoteTitle.textContent = 'Cytaty';
+            quoteSection.appendChild(quoteTitle);
+            
+            const quotesContainer = document.createElement('div');
+            quotesContainer.className = 'mystery-quotes';
+            
+            if (this.config.mysteryMovie.quote_pl) {
+                const quotePl = document.createElement('div');
+                quotePl.className = 'mystery-quote';
+                quotePl.innerHTML = `<strong>PL:</strong> "${this.config.mysteryMovie.quote_pl}"`;
+                quotesContainer.appendChild(quotePl);
+            }
+            
+            if (this.config.mysteryMovie.quote_en) {
+                const quoteEn = document.createElement('div');
+                quoteEn.className = 'mystery-quote';
+                quoteEn.innerHTML = `<strong>EN:</strong> "${this.config.mysteryMovie.quote_en}"`;
+                quotesContainer.appendChild(quoteEn);
+            }
+            
+            quoteSection.appendChild(quotesContainer);
+            container.appendChild(quoteSection);
+        }
+
+        // Description section (if revealed)
+        if (this.config.hintState.showDescription && this.config.mysteryMovie?.description) {
+            const descriptionSection = document.createElement('div');
+            descriptionSection.className = 'mystery-description-section';
+            
+            const descriptionTitle = document.createElement('div');
+            descriptionTitle.className = 'mystery-section-title';
+            descriptionTitle.textContent = 'Opis filmu';
+            descriptionSection.appendChild(descriptionTitle);
+            
+            const descriptionText = document.createElement('div');
+            descriptionText.className = 'mystery-description';
+            descriptionText.textContent = this.config.mysteryMovie.description;
+            descriptionSection.appendChild(descriptionText);
+            
+            container.appendChild(descriptionSection);
+        }
+
         this.element = container;
         return container;
     }

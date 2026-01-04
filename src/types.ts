@@ -37,6 +37,9 @@ export interface Movie {
     production_countries: ProductionCountry[];
     top_cast: CastMember[];
     director: Director | null;
+    description?: string | null;
+    quote_pl?: string | null;
+    quote_en?: string | null;
 }
 
 export interface MovieSearchResult {
@@ -78,6 +81,9 @@ export interface RawMovieResponse {
     production_countries: ProductionCountry[];
     cast: RawCastMember[];
     crew: RawCrewMember[];
+    description?: string | null;
+    quote_pl?: string | null;
+    quote_en?: string | null;
 }
 
 // Raw API response wrapper (with optional date field)

@@ -12,7 +12,9 @@ let hintsState = {
     showLetters: false,
     revealedLetters: new Set(),
     revealedGenres: new Set(),
-    revealedActors: new Set()
+    revealedActors: new Set(),
+    showQuote: false,
+    showDescription: false
 };
 let hints = [...HINTS];
 let hintsMenuComponent = null;
@@ -50,7 +52,10 @@ function transformMovieResponse(rawMovie) {
         production_companies: rawMovie.production_companies || [],
         production_countries: rawMovie.production_countries || [],
         top_cast: sortedCast,
-        director: director
+        director: director,
+        description: rawMovie.description || null,
+        quote_pl: rawMovie.quote_pl || null,
+        quote_en: rawMovie.quote_en || null
     };
 }
 // DOM elements
@@ -153,7 +158,9 @@ async function startNewGame() {
         showLetters: false,
         revealedLetters: new Set(),
         revealedGenres: new Set(),
-        revealedActors: new Set()
+        revealedActors: new Set(),
+        showQuote: false,
+        showDescription: false
     };
     hints = [...HINTS];
     hints[1].enabled = false; // reveal_random_letter disabled initially
@@ -246,6 +253,10 @@ function isHintAvailable(hintType) {
             });
             // Check if there's any actor that hasn't been revealed and hasn't been matched
             return mysteryMovie.top_cast.some((actor, index) => !hintsState.revealedActors.has(index) && !matchedActorNames.has(actor.name));
+        case 'reveal_quote':
+            return !hintsState.showQuote && !!(mysteryMovie.quote_pl || mysteryMovie.quote_en);
+        case 'reveal_description':
+            return !hintsState.showDescription && !!mysteryMovie.description;
         default:
             return false;
     }
@@ -265,6 +276,14 @@ function updateHintsAvailability() {
         }
         else if (hint.id === 'reveal_actor') {
             hint.enabled = isHintAvailable('reveal_actor');
+        }
+        else if (hint.id === 'reveal_quote') {
+            hint.enabled = isHintAvailable('reveal_quote');
+            hint.used = !isHintAvailable('reveal_quote');
+        }
+        else if (hint.id === 'reveal_description') {
+            hint.enabled = isHintAvailable('reveal_description');
+            hint.used = !isHintAvailable('reveal_description');
         }
     });
 }
@@ -344,6 +363,16 @@ function handleHintClick(hintType) {
                     break;
                 }
             }
+            break;
+        case 'reveal_quote':
+            hintsState.showQuote = true;
+            hint.used = true;
+            updateMysteryInfo();
+            break;
+        case 'reveal_description':
+            hintsState.showDescription = true;
+            hint.used = true;
+            updateMysteryInfo();
             break;
     }
     // Update hints availability
