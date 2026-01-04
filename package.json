@@ -1,0 +1,17 @@
+{
+  "name": "filmole",
+  "version": "1.0.0",
+  "description": "A movie guessing game",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "concurrently \"tsc --watch\" \"live-server --port=8080 --open=/index.html --watch=dist,index.html,style.css\"",
+    "serve": "npx http-server -p 8080 -o",
+    "start": "npm run build && npm run serve"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "live-server": "^1.2.0",
+    "typescript": "^5.3.0"
+  }
+}

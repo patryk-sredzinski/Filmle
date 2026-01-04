@@ -1,30 +1,40 @@
+import {
+    Movie,
+    MovieSearchResult,
+    MovieSearchResponse,
+    MovieResponse,
+    MovieComparison,
+    TooltipState,
+    ComparisonResult
+} from './types';
+
 // Game state
-let mysteryMovie = null;
-let attempts = 0;
-let gameWon = false;
+let mysteryMovie: Movie | null = null;
+let attempts: number = 0;
+let gameWon: boolean = false;
 
 // API base URL
 const API_BASE = 'https://filmle-api-git-main-patryk-sredzinskis-projects.vercel.app/api';
 
 // Global variable to track tooltip state
-let tooltipState = {
+let tooltipState: TooltipState = {
     sourceElement: null,
     hideTimeout: null
 };
 
 // DOM elements
-const movieSearch = document.getElementById('movieSearch');
-const autocomplete = document.getElementById('autocomplete');
-const guessesContainer = document.getElementById('guesses');
-const attemptsCounter = document.getElementById('attempts');
-const winMessage = document.getElementById('winMessage');
-const winAttempts = document.getElementById('winAttempts');
-const movieTitleHint = document.getElementById('movieTitleHint');
+const movieSearch = document.getElementById('movieSearch') as HTMLInputElement;
+const autocomplete = document.getElementById('autocomplete') as HTMLElement;
+const guessesContainer = document.getElementById('guesses') as HTMLElement;
+const attemptsCounter = document.getElementById('attempts') as HTMLElement;
+const winMessage = document.getElementById('winMessage') as HTMLElement;
+const winAttempts = document.getElementById('winAttempts') as HTMLElement;
+const movieTitleHint = document.getElementById('movieTitleHint') as HTMLElement;
 
 // Initialize game
-async function init() {
+async function init(): Promise<void> {
     // Track mouse position globally for tooltip detection
-    document.addEventListener('mousemove', (e) => {
+    document.addEventListener('mousemove', (e: MouseEvent) => {
         if (tooltipState.sourceElement) {
             const tooltip = document.getElementById('customTooltip');
             if (tooltip && tooltip.style.visibility != 'hidden') {
@@ -43,7 +53,7 @@ async function init() {
                     if (tooltipState.hideTimeout) {
                         clearTimeout(tooltipState.hideTimeout);
                     }
-                    tooltipState.hideTimeout = setTimeout(() => {
+                    tooltipState.hideTimeout = window.setTimeout(() => {
                         hideTooltip();
                     }, 50);
                 } else {
@@ -61,19 +71,24 @@ async function init() {
 }
 
 // Setup event listeners
-function setupEventListeners() {
+function setupEventListeners(): void {
+    if (!movieSearch || !autocomplete) return;
+    
     movieSearch.addEventListener('input', handleSearchInput);
     movieSearch.addEventListener('keydown', handleSearchKeydown);
     
-    document.addEventListener('click', (e) => {
-        if (!movieSearch.contains(e.target) && !autocomplete.contains(e.target)) {
+    document.addEventListener('click', (e: MouseEvent) => {
+        const target = e.target as Node;
+        if (!movieSearch.contains(target) && !autocomplete.contains(target)) {
             autocomplete.classList.remove('show');
         }
     });
 }
 
 // Start a new game
-async function startNewGame() {
+async function startNewGame(): Promise<void> {
+    if (!movieSearch || !attemptsCounter || !guessesContainer || !winMessage || !movieTitleHint) return;
+    
     try {
         const response = await fetch(`${API_BASE}/mystery_movie`, {
             method: 'GET',
@@ -85,8 +100,9 @@ async function startNewGame() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        mysteryMovie = await response.json();
-        mysteryMovie = mysteryMovie.movie;
+        const data: MovieResponse = await response.json();
+        mysteryMovie = data.movie;
+        console.log(mysteryMovie);
     } catch (error) {
         console.error('Error fetching mystery movie:', error);
         alert('Błąd: Nie udało się załadować tajemniczego filmu. Sprawdź konfigurację CORS na serwerze API lub odśwież stronę.');
@@ -96,7 +112,7 @@ async function startNewGame() {
     
     attempts = 0;
     gameWon = false;
-    attemptsCounter.textContent = attempts;
+    attemptsCounter.textContent = attempts.toString();
     guessesContainer.innerHTML = '';
     winMessage.classList.add('hidden');
     movieSearch.value = '';
@@ -107,7 +123,7 @@ async function startNewGame() {
 }
 
 // Generate underscores hint for movie title
-function updateMovieTitleHint() {
+function updateMovieTitleHint(): void {
     if (!mysteryMovie || !movieTitleHint) return;
     
     const title = mysteryMovie.title || mysteryMovie.original_title || '';
@@ -127,8 +143,11 @@ function updateMovieTitleHint() {
 }
 
 // Handle search input
-async function handleSearchInput(e) {
-    const query = e.target.value.trim();
+async function handleSearchInput(e: Event): Promise<void> {
+    if (!autocomplete) return;
+    
+    const target = e.target as HTMLInputElement;
+    const query = target.value.trim();
     
     if (query.length < 2) {
         autocomplete.classList.remove('show');
@@ -146,8 +165,8 @@ async function handleSearchInput(e) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const matches = await response.json();
-        displayAutocomplete(matches.results);
+        const data: MovieSearchResponse = await response.json();
+        displayAutocomplete(data.results);
     } catch (error) {
         console.error('Error searching movies:', error);
         autocomplete.classList.remove('show');
@@ -155,7 +174,9 @@ async function handleSearchInput(e) {
 }
 
 // Display autocomplete suggestions
-function displayAutocomplete(matches) {
+function displayAutocomplete(matches: MovieSearchResult[]): void {
+    if (!autocomplete) return;
+    
     // 1. Filter out movies without posters first
     const matchesWithPosters = matches.filter(movie => movie.poster_path);
 
@@ -183,18 +204,20 @@ function displayAutocomplete(matches) {
     
     autocomplete.querySelectorAll('.autocomplete-item').forEach(item => {
         item.addEventListener('click', () => {
-            const movieId = parseInt(item.dataset.id);
+            const movieId = parseInt((item as HTMLElement).dataset.id || '0');
             selectMovie(movieId);
         });
     });
 }
 
 // Handle keyboard navigation
-function handleSearchKeydown(e) {
+function handleSearchKeydown(e: KeyboardEvent): void {
+    if (!autocomplete) return;
+    
     if (e.key === 'Enter') {
-        const firstItem = autocomplete.querySelector('.autocomplete-item');
+        const firstItem = autocomplete.querySelector('.autocomplete-item') as HTMLElement;
         if (firstItem) {
-            const movieId = parseInt(firstItem.dataset.id);
+            const movieId = parseInt(firstItem.dataset.id || '0');
             selectMovie(movieId);
         }
     } else if (e.key === 'Escape') {
@@ -203,12 +226,13 @@ function handleSearchKeydown(e) {
 }
 
 // Select a movie and process guess
-async function selectMovie(movieId) {
-    if (gameWon) return;
+async function selectMovie(movieId: number): Promise<void> {
+    if (!movieSearch || !autocomplete || !attemptsCounter || !winMessage || !winAttempts || !guessesContainer) return;
+    if (gameWon || !mysteryMovie) return;
     
     autocomplete.classList.remove('show');
     
-    let guessedMovieDetails;
+    let guessedMovieDetails: Movie;
     try {
         const response = await fetch(`${API_BASE}/movie/${movieId}`, {
             method: 'GET',
@@ -220,8 +244,8 @@ async function selectMovie(movieId) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        guessedMovieDetails = await response.json();
-        guessedMovieDetails = guessedMovieDetails.movie;
+        const data: MovieResponse = await response.json();
+        guessedMovieDetails = data.movie;
     } catch (error) {
         console.error('Error fetching movie details:', error);
         alert('Błąd: Nie udało się załadować szczegółów filmu.');
@@ -229,14 +253,14 @@ async function selectMovie(movieId) {
     }
     
     attempts++;
-    attemptsCounter.textContent = attempts;
+    attemptsCounter.textContent = attempts.toString();
     
     const comparison = compareMovies(guessedMovieDetails, mysteryMovie);
     displayGuess(guessedMovieDetails, comparison);
     
     if (guessedMovieDetails.id === mysteryMovie.id) {
         gameWon = true;
-        winAttempts.textContent = attempts;
+        winAttempts.textContent = attempts.toString();
         winMessage.classList.remove('hidden');
         movieSearch.disabled = true;
         winMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -246,89 +270,94 @@ async function selectMovie(movieId) {
 }
 
 // Compare two movies
-function compareMovies(guessed, mystery) {
-    const comparison = {};
-    
+function compareMovies(guessed: Movie, mystery: Movie): MovieComparison {
     const guessedYear = guessed.release_date ? new Date(guessed.release_date).getFullYear() : 0;
     const mysteryYear = mystery.release_date ? new Date(mystery.release_date).getFullYear() : 0;
-    comparison.year = {
-        guessed: guessedYear || 'Nieznany',
-        mystery: mysteryYear || 'Nieznany',
-        result: guessedYear === 0 || mysteryYear === 0 ? 'unknown' : 
-                (guessedYear === mysteryYear ? 'match' : (guessedYear > mysteryYear ? 'higher' : 'lower'))
-    };
+    
+    const yearResult: ComparisonResult = guessedYear === 0 || mysteryYear === 0 ? 'unknown' : 
+            (guessedYear === mysteryYear ? 'match' : (guessedYear > mysteryYear ? 'higher' : 'lower'));
     
     const guessedGenres = guessed.genres.map(genre => genre.name) || [];
     const mysteryGenres = mystery.genres.map(genre => genre.name) || [];
     
     const commonGenres = guessedGenres.filter(g => mysteryGenres.includes(g));
-    comparison.genres = {
-        guessed: guessedGenres,
-        mystery: mysteryGenres,
-        matches: commonGenres,
-        hasMatch: commonGenres.length > 0
-    };
     
     const guessedBudget = guessed.budget || 0;
     const mysteryBudget = mystery.budget || 0;
-    comparison.budget = {
-        guessed: guessedBudget,
-        mystery: mysteryBudget,
-        result: guessedBudget === mysteryBudget ? 'match' : (guessedBudget > mysteryBudget ? 'higher' : 'lower')
-    };
+    const budgetResult: ComparisonResult = guessedBudget === mysteryBudget ? 'match' : (guessedBudget > mysteryBudget ? 'higher' : 'lower');
     
     const guessedRevenue = guessed.revenue || 0;
     const mysteryRevenue = mystery.revenue || 0;
-    comparison.revenue = {
-        guessed: guessedRevenue,
-        mystery: mysteryRevenue,
-        result: guessedRevenue === mysteryRevenue ? 'match' : (guessedRevenue > mysteryRevenue ? 'higher' : 'lower')
-    };
+    const revenueResult: ComparisonResult = guessedRevenue === mysteryRevenue ? 'match' : (guessedRevenue > mysteryRevenue ? 'higher' : 'lower');
     
     const guessedCompanies = (guessed.production_companies || []).map(c => c.name);
     const mysteryCompanies = (mystery.production_companies || []).map(c => c.name);
     const commonCompanies = guessedCompanies.filter(c => mysteryCompanies.includes(c));
-    comparison.companies = {
-        guessed: guessedCompanies,
-        mystery: mysteryCompanies,
-        matches: commonCompanies,
-        hasMatch: commonCompanies.length > 0
-    };
     
     const guessedCountries = (guessed.production_countries || []).map(c => c.name);
     const mysteryCountries = (mystery.production_countries || []).map(c => c.name);
     const commonCountries = guessedCountries.filter(c => mysteryCountries.includes(c));
-    comparison.countries = {
-        guessed: guessedCountries,
-        mystery: mysteryCountries,
-        matches: commonCountries,
-        hasMatch: commonCountries.length > 0
-    };
     
     const guessedCast = (guessed.top_cast || []).map(a => a.name);
     const mysteryCast = (mystery.top_cast || []).map(a => a.name);
     const commonCast = guessedCast.filter(a => mysteryCast.includes(a));
-    comparison.cast = {
-        guessed: guessedCast,
-        mystery: mysteryCast,
-        matches: commonCast,
-        hasMatch: commonCast.length > 0
-    };
     
     const guessedDirector = guessed.director?.name || null;
     const mysteryDirector = mystery.director?.name || null;
-    comparison.director = {
-        guessed: guessedDirector ? [guessedDirector] : [],
-        mystery: mysteryDirector ? [mysteryDirector] : [],
-        matches: guessedDirector && mysteryDirector && guessedDirector === mysteryDirector ? [guessedDirector] : [],
-        hasMatch: guessedDirector && mysteryDirector && guessedDirector === mysteryDirector
+    
+    const comparison: MovieComparison = {
+        year: {
+            guessed: guessedYear || 'Nieznany',
+            mystery: mysteryYear || 'Nieznany',
+            result: yearResult
+        },
+        genres: {
+            guessed: guessedGenres,
+            mystery: mysteryGenres,
+            matches: commonGenres,
+            hasMatch: commonGenres.length > 0
+        },
+        budget: {
+            guessed: guessedBudget,
+            mystery: mysteryBudget,
+            result: budgetResult
+        },
+        revenue: {
+            guessed: guessedRevenue,
+            mystery: mysteryRevenue,
+            result: revenueResult
+        },
+        companies: {
+            guessed: guessedCompanies,
+            mystery: mysteryCompanies,
+            matches: commonCompanies,
+            hasMatch: commonCompanies.length > 0
+        },
+        countries: {
+            guessed: guessedCountries,
+            mystery: mysteryCountries,
+            matches: commonCountries,
+            hasMatch: commonCountries.length > 0
+        },
+        cast: {
+            guessed: guessedCast,
+            mystery: mysteryCast,
+            matches: commonCast,
+            hasMatch: commonCast.length > 0
+        },
+        director: {
+            guessed: guessedDirector ? [guessedDirector] : [],
+            mystery: mysteryDirector ? [mysteryDirector] : [],
+            matches: guessedDirector && mysteryDirector && guessedDirector === mysteryDirector ? [guessedDirector] : [],
+            hasMatch: guessedDirector !== null && mysteryDirector !== null && guessedDirector === mysteryDirector
+        }
     };
     
     return comparison;
 }
 
 // Genre icons mapping
-const genreIcons = {
+const genreIcons: Record<string, string> = {
     'Dramat': '🎭',
     'Komedia': '😂',
     'Kryminał': '🔫',
@@ -350,26 +379,26 @@ const genreIcons = {
     'Dokumentalny': '📹'
 };
 
-function getGenreIcon(genreName) {
+function getGenreIcon(genreName: string): string {
     return genreIcons[genreName] || '🎬';
 }
 
-function getCountryFlagUrl(countryCode) {
+function getCountryFlagUrl(countryCode: string | null | undefined): string {
     if (!countryCode) return '';
     return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
 }
 
-function getCountryNamePL(countryCode) {
+function getCountryNamePL(countryCode: string | null | undefined): string {
     if (!countryCode) return '';
     try {
         const displayNames = new Intl.DisplayNames(['pl'], { type: 'region' });
-        return displayNames.of(countryCode.toUpperCase());
+        return displayNames.of(countryCode.toUpperCase()) || countryCode;
     } catch (e) {
         return countryCode;
     }
 }
 
-function getActorInitials(name) {
+function getActorInitials(name: string | null | undefined): string {
     if (!name) return '?';
     const parts = name.trim().split(' ');
     if (parts.length >= 2) {
@@ -378,7 +407,7 @@ function getActorInitials(name) {
     return name.substring(0, 2).toUpperCase();
 }
 
-function getCompanyInitials(name) {
+function getCompanyInitials(name: string | null | undefined): string {
     if (!name) return '?';
     const words = name.trim().split(/\s+/);
     if (words.length >= 2) {
@@ -387,13 +416,14 @@ function getCompanyInitials(name) {
     return name.substring(0, 2).toUpperCase();
 }
 
-function showTooltip(text, element, imageUrl = null) {
+function showTooltip(text: string | null, element: HTMLElement, imageUrl: string | null = null): void {
     if (tooltipState.hideTimeout) {
         clearTimeout(tooltipState.hideTimeout);
         tooltipState.hideTimeout = null;
     }
     
     const tooltip = document.getElementById('customTooltip');
+    if (!tooltip) return;
     
     tooltip.classList.remove('hidden');
     tooltip.style.visibility = 'hidden';
@@ -438,12 +468,13 @@ function showTooltip(text, element, imageUrl = null) {
     
     tooltip.style.visibility = 'visible';
     
-    tooltipState.isVisible = true;
     tooltipState.sourceElement = element;
 }
 
-function hideTooltip() {
+function hideTooltip(): void {
     const tooltip = document.getElementById('customTooltip');
+    if (!tooltip) return;
+    
     tooltip.classList.add('hidden');
     tooltip.style.visibility = 'hidden';
     
@@ -454,7 +485,9 @@ function hideTooltip() {
     }
 }
 
-function displayGuess(movie, comparison) {
+function displayGuess(movie: Movie, comparison: MovieComparison): void {
+    if (!guessesContainer) return;
+    
     const year = movie.release_date ? new Date(movie.release_date).getFullYear() : '?';
     const posterUrl = movie.poster_path 
         ? `https://image.tmdb.org/t/p/w154${movie.poster_path}`
@@ -520,11 +553,11 @@ function displayGuess(movie, comparison) {
         revenueTooltip = `Przychód: ${revenueValue} ↑\ntajemniczy film ma większy przychód`;
     }
     
-    const guessedGenres = (movie.genres || []).map(genreName => {
-        const isMatch = comparison.genres.matches.includes(genreName);
+    const guessedGenres = (movie.genres || []).map(genre => {
+        const isMatch = comparison.genres.matches.includes(genre.name);
         return {
-            name: genreName,
-            icon: getGenreIcon(genreName),
+            name: genre.name,
+            icon: getGenreIcon(genre.name),
             isMatch: isMatch
         };
     });
@@ -667,26 +700,28 @@ function displayGuess(movie, comparison) {
     `;
     
     guessCard.querySelectorAll('[data-tooltip]').forEach(element => {
-        element.addEventListener('mouseenter', (e) => {
-            const tooltipText = e.target.getAttribute('data-tooltip');
-            const imageUrl = e.target.getAttribute('data-image');
-            showTooltip(tooltipText, e.target, imageUrl || null);
+        element.addEventListener('mouseenter', (e: Event) => {
+            const target = e.target as HTMLElement;
+            const tooltipText = target.getAttribute('data-tooltip');
+            const imageUrl = target.getAttribute('data-image');
+            showTooltip(tooltipText, target, imageUrl);
         });
     });
     
     guessCard.querySelectorAll('.actor-photo.has-image, .director-photo.has-image').forEach(element => {
-        const bgImage = element.style.backgroundImage;
+        const el = element as HTMLElement;
+        const bgImage = el.style.backgroundImage;
         if (bgImage && bgImage !== 'none') {
             const img = new Image();
             img.src = bgImage.replace(/url\(['"]?([^'"]+)['"]?\)/, '$1');
             img.onerror = () => {
-                element.classList.remove('has-image');
-                element.style.backgroundImage = 'none';
+                el.classList.remove('has-image');
+                el.style.backgroundImage = 'none';
             };
             img.onload = () => {
-                const initialsEl = element.querySelector('.actor-initials-fallback');
+                const initialsEl = el.querySelector('.actor-initials-fallback');
                 if (initialsEl) {
-                    initialsEl.style.display = 'none';
+                    (initialsEl as HTMLElement).style.display = 'none';
                 }
             };
         }
@@ -695,7 +730,7 @@ function displayGuess(movie, comparison) {
     guessesContainer.insertBefore(guessCard, guessesContainer.firstChild);
 }
 
-function formatCurrencyShort(amount) {
+function formatCurrencyShort(amount: number): string {
     if (amount === 0 || !amount) return '?';
     
     if (amount >= 1000000000) {
@@ -713,3 +748,4 @@ if (document.readyState === 'loading') {
 } else {
     init();
 }
+
