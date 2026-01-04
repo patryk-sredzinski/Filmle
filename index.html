@@ -20,43 +20,52 @@
             </div>
         </div>
 
-        <div id="mysteryInfo" class="mystery-info">
-            <div class="mystery-info-row">
-                <div class="mystery-hint-block">
-                    <div class="mystery-label">Rok:</div>
-                    <div class="mystery-value" id="mysteryYear">?</div>
-                </div>
-                <div class="mystery-hint-block">
-                    <div class="mystery-label">Budżet:</div>
-                    <div class="mystery-value" id="mysteryBudget">?</div>
-                </div>
-                <div class="mystery-hint-block">
-                    <div class="mystery-label">Box Office:</div>
-                    <div class="mystery-value" id="mysteryRevenue">?</div>
-                </div>
+        <div id="mysteryInfo" class="mystery-info guess-card">
+            <div class="mystery-header">
+                <div class="mystery-title">Tajemniczy film</div>
             </div>
-            <div class="mystery-info-row">
-                <div class="mystery-hint-block genres-block">
-                    <div class="mystery-label">Gatunki:</div>
-                    <div class="mystery-value" id="mysteryGenres">?</div>
+            <div class="hints-row">
+                <div class="hint-block" id="mysteryYearBlock">
+                    <div class="hint-inner hint-neutral" id="mysteryYearInner">
+                        <div class="hint-value" id="mysteryYear">?</div>
+                        <div class="hint-arrow" id="mysteryYearArrow"></div>
+                    </div>
                 </div>
-                <div class="mystery-hint-block companies-block">
-                    <div class="mystery-label">Studia:</div>
-                    <div class="mystery-value" id="mysteryCompanies">?</div>
+                
+                <div class="hint-block genres-block" id="mysteryGenresBlock">
+                    <span id="mysteryGenres" class="hint-neutral" style="padding: 5px;">-</span>
                 </div>
-                <div class="mystery-hint-block countries-block">
-                    <div class="mystery-label">Kraje:</div>
-                    <div class="mystery-value" id="mysteryCountries">?</div>
+                
+                <div class="hint-block budget-block" id="mysteryBudgetBlock">
+                    <div class="hint-inner hint-neutral" id="mysteryBudgetInner">
+                        <div class="hint-icon">💰</div>
+                        <div class="hint-amount" id="mysteryBudget">?</div>
+                        <div class="hint-arrow" id="mysteryBudgetArrow"></div>
+                    </div>
                 </div>
-            </div>
-            <div class="mystery-info-row">
-                <div class="mystery-hint-block cast-block">
-                    <div class="mystery-label">Aktorzy:</div>
-                    <div class="mystery-value" id="mysteryCast">?</div>
+                
+                <div class="hint-block revenue-block" id="mysteryRevenueBlock">
+                    <div class="hint-inner hint-neutral" id="mysteryRevenueInner">
+                        <div class="hint-icon">💵</div>
+                        <div class="hint-amount" id="mysteryRevenue">?</div>
+                        <div class="hint-arrow" id="mysteryRevenueArrow"></div>
+                    </div>
                 </div>
-                <div class="mystery-hint-block director-block">
-                    <div class="mystery-label">Reżyser:</div>
-                    <div class="mystery-value" id="mysteryDirector">?</div>
+                
+                <div class="hint-block companies-block" id="mysteryCompaniesBlock">
+                    <span id="mysteryCompanies" class="hint-neutral" style="padding: 5px;">-</span>
+                </div>
+                
+                <div class="hint-block countries-block" id="mysteryCountriesBlock">
+                    <span id="mysteryCountries" class="hint-neutral" style="padding: 5px;">-</span>
+                </div>
+                
+                <div class="hint-block director-block" id="mysteryDirectorBlock">
+                    <span id="mysteryDirector" class="hint-neutral" style="padding: 5px;">-</span>
+                </div>
+                
+                <div class="hint-block cast-block" id="mysteryCastBlock">
+                    <span id="mysteryCast" class="hint-neutral" style="padding: 5px;">-</span>
                 </div>
             </div>
         </div>

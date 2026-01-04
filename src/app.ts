@@ -70,8 +70,11 @@ const winMessage = document.getElementById('winMessage') as HTMLElement;
 let winAttempts = document.getElementById('winAttempts') as HTMLElement;
 const movieTitleHint = document.getElementById('movieTitleHint') as HTMLElement;
 const mysteryYear = document.getElementById('mysteryYear') as HTMLElement;
+const mysteryYearArrow = document.getElementById('mysteryYearArrow') as HTMLElement;
 const mysteryBudget = document.getElementById('mysteryBudget') as HTMLElement;
+const mysteryBudgetArrow = document.getElementById('mysteryBudgetArrow') as HTMLElement;
 const mysteryRevenue = document.getElementById('mysteryRevenue') as HTMLElement;
+const mysteryRevenueArrow = document.getElementById('mysteryRevenueArrow') as HTMLElement;
 const mysteryGenres = document.getElementById('mysteryGenres') as HTMLElement;
 const mysteryCompanies = document.getElementById('mysteryCompanies') as HTMLElement;
 const mysteryCountries = document.getElementById('mysteryCountries') as HTMLElement;
@@ -923,13 +926,16 @@ function updateMysteryInfo(): void {
     if (!mysteryMovie || allGuesses.length === 0) {
         // Reset to ? if no guesses
         if (mysteryYear) mysteryYear.textContent = '?';
+        if (mysteryYearArrow) mysteryYearArrow.textContent = '';
         if (mysteryBudget) mysteryBudget.textContent = '?';
+        if (mysteryBudgetArrow) mysteryBudgetArrow.textContent = '';
         if (mysteryRevenue) mysteryRevenue.textContent = '?';
-        if (mysteryGenres) mysteryGenres.innerHTML = '<span class="mystery-unknown">?</span>';
-        if (mysteryCompanies) mysteryCompanies.innerHTML = '<span class="mystery-unknown">?</span>';
-        if (mysteryCountries) mysteryCountries.innerHTML = '<span class="mystery-unknown">?</span>';
-        if (mysteryCast) mysteryCast.innerHTML = '<span class="mystery-unknown">?</span>';
-        if (mysteryDirector) mysteryDirector.innerHTML = '<span class="mystery-unknown">?</span>';
+        if (mysteryRevenueArrow) mysteryRevenueArrow.textContent = '';
+        if (mysteryGenres) mysteryGenres.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
+        if (mysteryCompanies) mysteryCompanies.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
+        if (mysteryCountries) mysteryCountries.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
+        if (mysteryCast) mysteryCast.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
+        if (mysteryDirector) mysteryDirector.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
         return;
     }
 
@@ -959,18 +965,44 @@ function updateMysteryInfo(): void {
     }
     
     if (mysteryYear) {
+        const yearInner = document.getElementById('mysteryYearInner');
+        let yearTooltip = '';
+        let yearClass = 'hint-neutral';
+        
         if (minYear !== null && maxYear !== null) {
             if (minYear === maxYear) {
                 mysteryYear.textContent = minYear.toString();
+                if (mysteryYearArrow) mysteryYearArrow.textContent = '=';
+                yearClass = 'hint-green';
+                yearTooltip = `Rok wydania: ${minYear} =\ntajemniczy film ma ten sam rok`;
             } else {
-                mysteryYear.textContent = `${minYear}-${maxYear}`;
+                // Show range: min, minus, max
+                mysteryYear.innerHTML = `${minYear}<br>-<br>${maxYear}`;
+                if (mysteryYearArrow) mysteryYearArrow.textContent = '';
+                yearClass = 'hint-yellow';
+                yearTooltip = `Rok wydania: ${minYear}-${maxYear}\ntajemniczy film jest między ${minYear} a ${maxYear}`;
             }
         } else if (minYear !== null) {
-            mysteryYear.textContent = `>${minYear}`;
+            mysteryYear.textContent = minYear.toString();
+            if (mysteryYearArrow) mysteryYearArrow.textContent = '↑';
+            yearClass = 'hint-yellow';
+            yearTooltip = `Rok wydania: >${minYear}\ntajemniczy film jest nowszy niż ${minYear}`;
         } else if (maxYear !== null) {
-            mysteryYear.textContent = `<${maxYear}`;
+            mysteryYear.textContent = maxYear.toString();
+            if (mysteryYearArrow) mysteryYearArrow.textContent = '↓';
+            yearClass = 'hint-yellow';
+            yearTooltip = `Rok wydania: <${maxYear}\ntajemniczy film jest starszy niż ${maxYear}`;
         } else {
             mysteryYear.textContent = '?';
+            if (mysteryYearArrow) mysteryYearArrow.textContent = '';
+            yearTooltip = 'Rok wydania: ?\nbrak danych';
+        }
+        
+        if (yearInner) {
+            yearInner.className = `hint-inner ${yearClass}`;
+            if (yearTooltip) {
+                yearInner.setAttribute('data-tooltip', yearTooltip);
+            }
         }
     }
 
@@ -1000,18 +1032,44 @@ function updateMysteryInfo(): void {
     }
     
     if (mysteryBudget) {
+        const budgetInner = document.getElementById('mysteryBudgetInner');
+        let budgetTooltip = '';
+        let budgetClass = 'hint-neutral';
+        
         if (minBudget !== null && maxBudget !== null) {
             if (Math.abs(minBudget - maxBudget) / Math.max(minBudget, maxBudget) < 0.1) {
                 mysteryBudget.textContent = formatCurrencyShort(minBudget);
+                if (mysteryBudgetArrow) mysteryBudgetArrow.textContent = '=';
+                budgetClass = 'hint-green';
+                budgetTooltip = `Budżet: ${formatCurrencyShort(minBudget)} =\ntajemniczy film ma ten sam budżet`;
             } else {
-                mysteryBudget.textContent = `${formatCurrencyShort(minBudget)} - ${formatCurrencyShort(maxBudget)}`;
+                // Show range: min, minus, max
+                mysteryBudget.innerHTML = `${formatCurrencyShort(minBudget)}<br>-<br>${formatCurrencyShort(maxBudget)}`;
+                if (mysteryBudgetArrow) mysteryBudgetArrow.textContent = '';
+                budgetClass = 'hint-yellow';
+                budgetTooltip = `Budżet: ${formatCurrencyShort(minBudget)} - ${formatCurrencyShort(maxBudget)}\ntajemniczy film ma budżet między ${formatCurrencyShort(minBudget)} a ${formatCurrencyShort(maxBudget)}`;
             }
         } else if (minBudget !== null) {
-            mysteryBudget.textContent = `>${formatCurrencyShort(minBudget)}`;
+            mysteryBudget.textContent = formatCurrencyShort(minBudget);
+            if (mysteryBudgetArrow) mysteryBudgetArrow.textContent = '↑';
+            budgetClass = 'hint-yellow';
+            budgetTooltip = `Budżet: >${formatCurrencyShort(minBudget)}\ntajemniczy film ma większy budżet niż ${formatCurrencyShort(minBudget)}`;
         } else if (maxBudget !== null) {
-            mysteryBudget.textContent = `<${formatCurrencyShort(maxBudget)}`;
+            mysteryBudget.textContent = formatCurrencyShort(maxBudget);
+            if (mysteryBudgetArrow) mysteryBudgetArrow.textContent = '↓';
+            budgetClass = 'hint-yellow';
+            budgetTooltip = `Budżet: <${formatCurrencyShort(maxBudget)}\ntajemniczy film ma mniejszy budżet niż ${formatCurrencyShort(maxBudget)}`;
         } else {
             mysteryBudget.textContent = '?';
+            if (mysteryBudgetArrow) mysteryBudgetArrow.textContent = '';
+            budgetTooltip = 'Budżet: ?\nbrak danych';
+        }
+        
+        if (budgetInner) {
+            budgetInner.className = `hint-inner ${budgetClass}`;
+            if (budgetTooltip) {
+                budgetInner.setAttribute('data-tooltip', budgetTooltip);
+            }
         }
     }
 
@@ -1041,18 +1099,44 @@ function updateMysteryInfo(): void {
     }
     
     if (mysteryRevenue) {
+        const revenueInner = document.getElementById('mysteryRevenueInner');
+        let revenueTooltip = '';
+        let revenueClass = 'hint-neutral';
+        
         if (minRevenue !== null && maxRevenue !== null) {
             if (Math.abs(minRevenue - maxRevenue) / Math.max(minRevenue, maxRevenue) < 0.1) {
                 mysteryRevenue.textContent = formatCurrencyShort(minRevenue);
+                if (mysteryRevenueArrow) mysteryRevenueArrow.textContent = '=';
+                revenueClass = 'hint-green';
+                revenueTooltip = `Box Office: ${formatCurrencyShort(minRevenue)} =\ntajemniczy film ma ten sam przychód`;
             } else {
-                mysteryRevenue.textContent = `${formatCurrencyShort(minRevenue)} - ${formatCurrencyShort(maxRevenue)}`;
+                // Show range: min, minus, max
+                mysteryRevenue.innerHTML = `${formatCurrencyShort(minRevenue)}<br>-<br>${formatCurrencyShort(maxRevenue)}`;
+                if (mysteryRevenueArrow) mysteryRevenueArrow.textContent = '';
+                revenueClass = 'hint-yellow';
+                revenueTooltip = `Box Office: ${formatCurrencyShort(minRevenue)} - ${formatCurrencyShort(maxRevenue)}\ntajemniczy film ma przychód między ${formatCurrencyShort(minRevenue)} a ${formatCurrencyShort(maxRevenue)}`;
             }
         } else if (minRevenue !== null) {
-            mysteryRevenue.textContent = `>${formatCurrencyShort(minRevenue)}`;
+            mysteryRevenue.textContent = formatCurrencyShort(minRevenue);
+            if (mysteryRevenueArrow) mysteryRevenueArrow.textContent = '↑';
+            revenueClass = 'hint-yellow';
+            revenueTooltip = `Box Office: >${formatCurrencyShort(minRevenue)}\ntajemniczy film ma większy przychód niż ${formatCurrencyShort(minRevenue)}`;
         } else if (maxRevenue !== null) {
-            mysteryRevenue.textContent = `<${formatCurrencyShort(maxRevenue)}`;
+            mysteryRevenue.textContent = formatCurrencyShort(maxRevenue);
+            if (mysteryRevenueArrow) mysteryRevenueArrow.textContent = '↓';
+            revenueClass = 'hint-yellow';
+            revenueTooltip = `Box Office: <${formatCurrencyShort(maxRevenue)}\ntajemniczy film ma mniejszy przychód niż ${formatCurrencyShort(maxRevenue)}`;
         } else {
             mysteryRevenue.textContent = '?';
+            if (mysteryRevenueArrow) mysteryRevenueArrow.textContent = '';
+            revenueTooltip = 'Box Office: ?\nbrak danych';
+        }
+        
+        if (revenueInner) {
+            revenueInner.className = `hint-inner ${revenueClass}`;
+            if (revenueTooltip) {
+                revenueInner.setAttribute('data-tooltip', revenueTooltip);
+            }
         }
     }
 
@@ -1079,7 +1163,7 @@ function updateMysteryInfo(): void {
             });
             mysteryGenres.innerHTML = genreElements.join('');
         } else {
-            mysteryGenres.innerHTML = '<span class="mystery-unknown">?</span>';
+            mysteryGenres.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
         }
     }
 
@@ -1110,7 +1194,7 @@ function updateMysteryInfo(): void {
             });
             mysteryCompanies.innerHTML = companyElements.join('');
         } else {
-            mysteryCompanies.innerHTML = '<span class="mystery-unknown">?</span>';
+            mysteryCompanies.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
         }
     }
 
@@ -1137,7 +1221,7 @@ function updateMysteryInfo(): void {
             });
             mysteryCountries.innerHTML = countryElements.join('');
         } else {
-            mysteryCountries.innerHTML = '<span class="mystery-unknown">?</span>';
+            mysteryCountries.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
         }
     }
 
@@ -1166,7 +1250,7 @@ function updateMysteryInfo(): void {
             });
             mysteryCast.innerHTML = castElements.join('');
         } else {
-            mysteryCast.innerHTML = '<span class="mystery-unknown">?</span>';
+            mysteryCast.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
         }
     }
 
@@ -1194,23 +1278,26 @@ function updateMysteryInfo(): void {
             const bgStyle = profileUrl ? `background-image: url('${profileUrl}');` : '';
             mysteryDirector.innerHTML = `<span class="director-photo hint-green ${hasImage}" data-tooltip="Reżyser: ${matchedDirectorName}" style="${bgStyle}"><span class="actor-initials-fallback">${initials}</span></span>`;
         } else {
-            mysteryDirector.innerHTML = '<span class="mystery-unknown">?</span>';
+            mysteryDirector.innerHTML = '<span class="hint-neutral" style="padding: 5px;">-</span>';
         }
     }
 
     // Add tooltip listeners for mystery info
-    if (mysteryGenres) {
-        mysteryGenres.querySelectorAll('[data-tooltip]').forEach(element => {
+    const yearInner = document.getElementById('mysteryYearInner');
+    const budgetInner = document.getElementById('mysteryBudgetInner');
+    const revenueInner = document.getElementById('mysteryRevenueInner');
+    
+    [yearInner, budgetInner, revenueInner].forEach(element => {
+        if (element && element.hasAttribute('data-tooltip')) {
             element.addEventListener('mouseenter', (e: Event) => {
                 const target = e.target as HTMLElement;
                 const tooltipText = target.getAttribute('data-tooltip');
-                const imageUrl = target.getAttribute('data-image');
-                showTooltip(tooltipText, target, imageUrl);
+                showTooltip(tooltipText, target);
             });
-        });
-    }
+        }
+    });
     
-    [mysteryCompanies, mysteryCountries, mysteryCast, mysteryDirector].forEach(container => {
+    [mysteryGenres, mysteryCompanies, mysteryCountries, mysteryCast, mysteryDirector].forEach(container => {
         if (container) {
             container.querySelectorAll('[data-tooltip]').forEach(element => {
                 element.addEventListener('mouseenter', (e: Event) => {

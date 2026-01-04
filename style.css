@@ -68,68 +68,27 @@ h1 {
 }
 
 .mystery-info {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 20px;
     margin-bottom: 20px;
-    border: 2px solid #e9ecef;
 }
 
-.mystery-info-row {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+.mystery-header {
+    margin-bottom: 12px;
 }
 
-.mystery-info-row:last-child {
-    margin-bottom: 0;
+.mystery-title {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #333;
 }
 
-.mystery-hint-block {
-    flex: 1;
-    min-width: 200px;
+.mystery-info .hint-block {
+    cursor: default;
 }
 
-.mystery-label {
-    font-size: 0.9em;
-    color: #666;
-    margin-bottom: 8px;
-    font-weight: 500;
+.mystery-info .hint-block:hover {
+    transform: none;
 }
 
-.mystery-value {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    min-height: 32px;
-}
-
-.mystery-unknown {
-    color: #999;
-    font-size: 1.2em;
-    font-weight: 600;
-}
-
-.mystery-hint-block.genres-block .mystery-value,
-.mystery-hint-block.companies-block .mystery-value,
-.mystery-hint-block.countries-block .mystery-value,
-.mystery-hint-block.cast-block .mystery-value,
-.mystery-hint-block.director-block .mystery-value {
-    gap: 6px;
-}
-
-@media (max-width: 768px) {
-    .mystery-info-row {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .mystery-hint-block {
-        min-width: 100%;
-    }
-}
 
 .game-controls {
     display: flex;
@@ -355,6 +314,7 @@ h1 {
     font-size: 1.1em;
     margin-bottom: 2px;
     font-weight: 700;
+    line-height: 1.2;
 }
 
 .hint-icon {
@@ -367,8 +327,8 @@ h1 {
     font-weight: 700;
     margin-bottom: 2px;
     text-align: center;
-    line-height: 1.1;
-    white-space: nowrap;
+    line-height: 1.2;
+    white-space: normal;
 }
 
 .hint-arrow {
@@ -397,7 +357,7 @@ h1 {
 
 .hint-inner.hint-neutral {
     background: #e2e3e5;
-    border: 2px solid #6c757d;
+    border: none;
     color: #383d41;
 }
 
