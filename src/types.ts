@@ -50,11 +50,43 @@ export interface MovieSearchResponse {
     results: MovieSearchResult[];
 }
 
-export interface MovieResponse {
-    movie: Movie;
+// Raw API response types
+export interface RawCastMember {
+    name: string;
+    profile_path: string | null;
+    order: number;
+    character?: string;
 }
 
-export type ComparisonResult = 'match' | 'higher' | 'lower' | 'unknown';
+export interface RawCrewMember {
+    name: string;
+    profile_path: string | null;
+    job: string;
+    department: string;
+}
+
+export interface RawMovieResponse {
+    id: number;
+    title: string;
+    original_title?: string;
+    release_date: string | null;
+    poster_path: string | null;
+    genres: Genre[];
+    budget: number;
+    revenue: number;
+    production_companies: ProductionCompany[];
+    production_countries: ProductionCountry[];
+    cast: RawCastMember[];
+    crew: RawCrewMember[];
+}
+
+// Raw API response wrapper (with optional date field)
+export interface RawMovieResponseWrapper {
+    date?: string;
+    movie: RawMovieResponse;
+}
+
+export type ComparisonResult = 'match' | 'close' | 'far' | 'unknown';
 
 export interface YearComparison {
     guessed: number | string;
@@ -67,6 +99,7 @@ export interface GenresComparison {
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
+    isClose: boolean;
 }
 
 export interface BudgetComparison {
@@ -86,6 +119,7 @@ export interface CompaniesComparison {
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
+    isClose: boolean;
 }
 
 export interface CountriesComparison {
@@ -93,6 +127,7 @@ export interface CountriesComparison {
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
+    isClose: boolean;
 }
 
 export interface CastComparison {
@@ -100,6 +135,7 @@ export interface CastComparison {
     mystery: string[];
     matches: string[];
     hasMatch: boolean;
+    isClose: boolean;
 }
 
 export interface DirectorComparison {
